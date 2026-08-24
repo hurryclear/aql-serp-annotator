@@ -1,0 +1,14 @@
+- component
+- event handling
+- managing state
+    - even component has its own state
+    - 
+- prop (propertity)
+    - passing data through prop
+    - passing function through prop
+- react router dom?
+- how does react frontend talk to backend?
+- hook
+    - useState
+    - useNavigate
+

@@ -1,0 +1,8 @@
+- React: library
+- Angular, Vue: framework
+    - a framework includes router, ...
+    - framework vs. library !!!
+- bootstrap?
+- tailwind css?
+- axios?
+- 
