@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>GT Comparison</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; display: flex; flex-direction: column; height: 100vh; }
+        .header { background: #333; color: #fff; padding: 10px 16px; font-size: 14px; display: flex; align-items: center; gap: 16px; }
+        .header .label { font-weight: bold; }
+        .legend { display: flex; gap: 12px; font-size: 12px; }
+        .legend span { display: flex; align-items: center; gap: 4px; }
+        .legend .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+        .main { display: flex; flex: 1; overflow: hidden; }
+        .sidebar { width: 280px; background: #f5f5f5; border-right: 2px solid #ddd; overflow-y: auto; flex-shrink: 0; }
+        .sidebar-item { padding: 10px 12px; border-bottom: 1px solid #ddd; cursor: pointer; font-size: 12px; }
+        .sidebar-item:hover { background: #e8e8e8; }
+        .sidebar-item.active { background: #d0d0ff; border-left: 4px solid #333; }
+        .sidebar-item .serp-id { font-weight: bold; font-family: monospace; word-break: break-all; }
+        .sidebar-item .badges { margin-top: 4px; display: flex; gap: 4px; flex-wrap: wrap; }
+        .badge { padding: 2px 6px; border-radius: 3px; font-size: 10px; color: #fff; font-weight: bold; }
+        .content { flex: 1; display: flex; }
+        .pane { flex: 1; display: flex; flex-direction: column; }
+        .pane:first-child { border-right: 2px solid #666; }
+        .pane-label { padding: 6px 12px; font-size: 12px; font-weight: bold; border-bottom: 2px solid #ddd; }
+        .pane:first-child .pane-label { background: #e8f5e9; color: #2e7d32; }
+        .pane:last-child .pane-label { background: #fff3e0; color: #e65100; }
+        iframe { flex: 1; border: none; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <span class="label">GT Comparison: {{LABEL}}</span>
+        <div class="legend">
+            <span><span class="dot" style="background:#4caf50"></span>Matched</span>
+            <span><span class="dot" style="background:#e53935"></span>Mismatched</span>
+            <span><span class="dot" style="background:#7b1fa2"></span>Missing</span>
+            <span><span class="dot" style="background:#ff9800"></span>Extra</span>
+            <span><span class="dot" style="background:#795548"></span>Extraction Failed</span>
+        </div>
+    </div>
+    <div class="main">
+        <div class="sidebar" id="sidebar"></div>
+        <div class="content">
+            <div class="pane">
+                <div class="pane-label">Annotated Result (Ground-Truth)</div>
+                <iframe id="gt-frame"></iframe>
+            </div>
+            <div class="pane">
+                <div class="pane-label">Parsed Result (XPath)</div>
+                <iframe id="ext-frame"></iframe>
+            </div>
+        </div>
+    </div>
+    <script>
+        var entries = {{ENTRIES_JSON}};
+        var badgeColors = {mismatched:'#e53935', missing:'#7b1fa2', extra:'#ff9800', extraction_failed:'#795548'};
+        var sidebar = document.getElementById('sidebar');
+        entries.forEach(function(e, i) {
+            var div = document.createElement('div');
+            div.className = 'sidebar-item';
+            div.dataset.index = i;
+            var badges = Object.entries(e.statuses).map(function(kv) {
+                return '<span class="badge" style="background:' + (badgeColors[kv[0]]||'#999') + '">' + kv[1] + ' ' + kv[0] + '</span>';
+            }).join('');
+            div.innerHTML = '<div class="serp-id">' + e.serp_id + '</div><div class="badges">' + badges + '</div>';
+            div.onclick = function() { selectEntry(i); };
+            sidebar.appendChild(div);
+        });
+        function selectEntry(i) {
+            document.querySelectorAll('.sidebar-item').forEach(function(el) { el.classList.remove('active'); });
+            document.querySelector('[data-index="' + i + '"]').classList.add('active');
+            document.getElementById('gt-frame').src = 'file://' + entries[i].gt_path;
+            document.getElementById('ext-frame').src = 'file://' + entries[i].ext_path;
+        }
+        if (entries.length) selectEntry(0);
+    </script>
+</body>
+</html>

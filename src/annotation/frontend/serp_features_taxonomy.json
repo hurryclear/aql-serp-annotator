@@ -1,0 +1,162 @@
+{
+  "version": "1.1",
+  "last_updated": "2026-03-13",
+  "source": "https://serp-elements-catalog.pages.dev/features#features",
+  "categories": [
+    {
+      "id": "exploration_features",
+      "label": "Exploration Features",
+      "description": "ask chatbot, category related searches, explore more, people also ask, query complements, related products, related results, scholarly articles, topic exploration wrap, trending now, trending recommendations, you may also need scholarly articles",
+      "remark": "type"
+    },
+    {
+      "id": "search_refinement",
+      "label": "Search Refinement",
+      "description": "automatic spell correction, disambiguation box, results language, results location, shopping filter side bar",
+      "remark": "type"
+    },
+    {
+      "id": "direct_answer",
+      "label": "Direct Answer",
+      "description": "calendar, color picker, currency converter, date and time, dictionary box, general converter, health panel, horoscope, map, math calculator, math solver, nutrition box, poem, population chart, quotes, sos alert, sports box, stock box, timer, translation box, weather box, whenIs box, zip code enquiry",
+      "remark": "subtype of zero-click answers"
+    },
+    {
+      "id": "featured_snippet",
+      "label": "Featured Snippet",
+      "description": "featured snippet with images, list or bullet points featured snippet, paragraph featured snippet, table featured snippet, video featured snippet",
+      "remark": "subtype of zero-click answers"
+    },
+    {
+      "id": "quick_answer",
+      "label": "Quick Answer",
+      "description": "",
+      "remark": "subtype of zero-click answers"
+    },
+    {
+      "id": "ai_overview",
+      "label": "AI Overview",
+      "description": "AI overview or summary",
+      "remark": "subtype of zero-click answers"
+    },
+    {
+      "id": "carousel",
+      "label": "Carousel",
+      "description": "carousel, carousel grid, compare sites",
+      "remark": "type"
+    },
+    {
+      "id": "knowledge_panel",
+      "label": "Knowledge Panel",
+      "description": "right side knowledge panel, top knowledge panel",
+      "remark": "type"
+    },
+    {
+      "id": "local_features",
+      "label": "Local Features",
+      "description": "local knowledge panel, top knowledge panel",
+      "remark": "type"
+    },
+    {
+      "id": "video_and_image_packs",
+      "label": "Video and image packs",
+      "description": "video pack, image pack",
+      "remark": "type"
+    },
+    {
+      "id": "recipe_cards",
+      "label": "Recipe Cards",
+      "description": "Cooking instruction cards with images and ratings",
+      "remark": "subtype of topic-related features"
+    },
+    {
+      "id": "shopping_features",
+      "label": "Shopping features",
+      "description": "car shopping widget, popular products",
+      "remark": "subtype of topic-related features"
+    },
+    {
+      "id": "travel-related_features ",
+      "label": "Travel-related features",
+      "description": "airline options list, find flight form, flight sites, flight status panel, flights from city, hotel pack, places to visit, top sights",
+      "remark": "subtype of topic-related features"
+    },
+    {
+      "id": "news_related_features",
+      "label": "News-related features",
+      "description": "article boxes, latest from boxes, top stories",
+      "remark": "subtype of topic-related features"
+    },
+    {
+      "id": "social_network_related_features",
+      "label": "Social network-related features",
+      "description": "perspectives, x pack",
+      "remark": "subtype of topic-related features"
+    },
+    {
+      "id": "education_related_features",
+      "label": "Education-related features",
+      "description": "education Q&A, practice problems, related compositions",
+      "remark": "subtype of topic-related features"
+    },
+    {
+      "id": "finance_related_featuers",
+      "label": "Finance-related features",
+      "description": "company financials, finance markets",
+      "remark": "subtype of topic-related features"
+    },
+    {
+      "id": "house_pack",
+      "label": "House Pack",
+      "description": "",
+      "remark": "subtype of topic-related features"
+    },
+    {
+      "id": "jobs",
+      "label": "Jobs",
+      "description": "",
+      "remark": "subtype of topic-related features"
+    },
+    {
+      "id": "discussions_and_forums",
+      "label": "Discussions and forums",
+      "description": "",
+      "remark": "subtype of topic-related features"
+    },
+    {
+      "id": "datasets",
+      "label": "Datasets",
+      "description": "",
+      "remark": "subtype of topic-related features"
+    },
+    {
+      "id": "how_to_get_there",
+      "label": "How to get there",
+      "description": "",
+      "remark": "subtype of topic-related features"
+    },
+    {
+      "id": "songs",
+      "label": "Songs",
+      "description": "",
+      "remark": "subtype of topic-related features"
+    },
+    {
+      "id": "search_engine_products",
+      "label": "Search engine products",
+      "description": "advertise here ad, baidu legal services ad, bing real estate ad",
+      "remark": "type"
+    },
+    {
+      "id": "search_engine_notes",
+      "label": "Search engine notes",
+      "description": "note on displayed prices, note on false information results, note on how to contact customer service, note on how to do secure transactions, note on omitted results",
+      "remark": "type"
+    },
+    {
+      "id": "placeholder",
+      "label": "Placeholder",
+      "description": "Placeholder for ambiguous cases, unknown cases, uncertain cases"
+    }
+  ]
+}

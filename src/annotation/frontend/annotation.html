@@ -1,0 +1,1567 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Feature Block Annotation Controller</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+
+        /* Initial setup screens */
+        #setup-screen {
+            max-width: 600px;
+            margin: 50px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .folder-list {
+            list-style: none;
+            padding: 0;
+        }
+        .folder-item {
+            padding: 15px;
+            margin: 10px 0;
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+        }
+        .folder-item:hover {
+            background: #e8f4e8;
+            border-color: #4CAF50;
+        }
+
+        .session-info {
+            background: #f0f7ff;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #2196F3;
+        }
+
+        /* Annotation workspace */
+        #annotation-workspace {
+            display: none;
+            height: 100vh;
+            max-height: 100vh;
+        }
+
+        #workspace-header {
+            background: white;
+            padding: 15px 20px;
+            border-bottom: 2px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #progress-info {
+            font-size: 14px;
+            color: #666;
+        }
+
+        #workspace-content {
+            display: flex;
+            height: calc(100vh - 120px);
+        }
+
+        /* SERP viewer (left side) */
+        #serp-viewer {
+            flex: 1;
+            background: white;
+            margin: 10px;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        #serp-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        /* Annotation panel (right side) */
+        #annotation-panel {
+            width: 480px;
+            background: white;
+            margin: 10px 10px 10px 0;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow-y: auto;
+        }
+
+        #annotation-panel h3 {
+            margin-top: 0;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #555;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 4px;
+        }
+
+        .checkbox-label:hover {
+            background: #f5f5f5;
+        }
+
+        .checkbox-label input[type="checkbox"] {
+            margin-right: 10px;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: inherit;
+            resize: vertical;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            font-weight: 500;
+        }
+
+        .btn-primary {
+            background: #4CAF50;
+            color: white;
+            width: 100%;
+        }
+
+        .btn-primary:hover {
+            background: #45a049;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+            margin-top: 10px;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #F57C00;
+            color: white;
+            font-weight: 600;
+        }
+
+        .btn-warning:hover {
+            background: #E65100;
+        }
+
+        .btn-warning:disabled {
+            background: #FF9800;
+            opacity: 0.7;
+            color: white;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        /* ===== FB MARKING STATES ===== */
+
+        /* Testing state - Orange outline */
+        .fb-testing {
+            outline: 3px solid #FFA500 !important;
+            outline-offset: 2px;
+            background-color: rgba(255, 165, 0, 0.1) !important;
+            transition: all 0.3s ease;
+        }
+
+        /* Accepted state - Green outline, dimmed */
+        .fb-accepted {
+            outline: 2px solid #4CAF50 !important;
+            outline-offset: 2px;
+            background-color: rgba(76, 175, 80, 0.1) !important;
+            opacity: 0.7;
+            transition: all 0.3s ease;
+        }
+
+        /* Saved state - Blue outline (for saved HTML files) */
+        .fb {
+            outline: 3px solid #2196F3 !important;
+            outline-offset: 2px;
+            background-color: rgba(33, 150, 243, 0.1) !important;
+        }
+
+        /* ===== TEST RESULT DISPLAY ===== */
+
+        .test-result {
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border: 2px solid;
+        }
+
+        .test-result.match {
+            background-color: #E8F5E9;
+            border-color: #4CAF50;
+        }
+
+        .test-result.mismatch {
+            background-color: #FFEBEE;
+            border-color: #F44336;
+        }
+
+        .test-result.error {
+            background-color: #FFF3E0;
+            border-color: #FF9800;
+        }
+
+        .result-message {
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+
+        .result-details {
+            margin-top: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 3px;
+            border: 1px solid #ddd;
+        }
+
+        .detail-section {
+            margin-bottom: 15px;
+        }
+
+        .detail-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .detail-section strong {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+        }
+
+        .detail-section pre {
+            background: #F5F5F5;
+            padding: 12px;
+            border-radius: 3px;
+            overflow-x: auto;
+            font-size: 12px;
+            line-height: 1.4;
+            margin: 0;
+            border: 1px solid #e0e0e0;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .btn-link {
+            background: none;
+            border: none;
+            color: #2196F3;
+            cursor: pointer;
+            text-decoration: underline;
+            padding: 5px 0;
+            font-size: 14px;
+        }
+
+        .btn-link:hover {
+            color: #0b7dda;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            font-family: inherit;
+            box-sizing: border-box;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #2196F3;
+        }
+
+        textarea.form-control {
+            font-family: 'Courier New', monospace;
+            resize: vertical;
+        }
+
+        select.form-control {
+            cursor: pointer;
+        }
+
+        /* Category Button Grid Styles - Blue */
+        .category-btn {
+            padding: 12px 16px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            background: #fff;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            text-align: center;
+            transition: all 0.2s ease;
+            color: #555;
+        }
+
+        .category-btn:hover {
+            border-color: #2196F3;
+            background: #e3f2fd;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(33, 150, 243, 0.2);
+        }
+
+        .category-btn.selected {
+            background: #2196F3;
+            border-color: #2196F3;
+            color: white;
+            font-weight: 600;
+        }
+
+        .category-btn.selected:hover {
+            background: #1976D2;
+            border-color: #1976D2;
+        }
+
+        .category-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: #f5f5f5;
+        }
+
+        /* Alphabet divider */
+        .alphabet-divider {
+            grid-column: 1 / -1;
+            height: 1px;
+            background: #e0e0e0;
+            margin: 8px 0;
+        }
+
+        .alphabet-divider:first-child {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Feature Block Annotation Controller</h1>
+
+    <!-- Setup Screen (shown initially) -->
+    <div id="setup-screen">
+        <div id="loading-session" class="loading">
+            Loading session...
+        </div>
+
+        <!-- Remote mode session info -->
+        <div id="remote-session" style="display: none;">
+            <h2>📡 Remote Annotation Session</h2>
+            <div class="session-info" id="session-details"></div>
+            <button class="btn-primary" onclick="startAnnotation()">🚀 Start Annotation</button>
+        </div>
+
+    </div>
+
+    <!-- Annotation Workspace (shown during annotation) -->
+    <div id="annotation-workspace">
+        <div id="workspace-header">
+            <div id="progress-info"></div>
+            <button class="btn-secondary" onclick="exitWorkspace()">Exit</button>
+        </div>
+
+        <div id="workspace-content">
+            <!-- SERP Viewer (iframe loads cleaned HTML from server) -->
+            <div id="serp-viewer">
+                <iframe id="serp-iframe"></iframe>
+            </div>
+
+            <!-- Annotation Panel -->
+            <div id="annotation-panel">
+                <h3>Feature Block Annotation</h3>
+
+                <!-- INSTRUCTIONS SECTION - HIDDEN FOR NOW -->
+                <div style="display: none; background: #fff3cd; padding: 15px; border-radius: 5px; margin-bottom: 20px; font-size: 14px;">
+                    <strong>📋 Instructions:</strong>
+                    <ol style="margin: 10px 0 0 0; padding-left: 20px;">
+                        <li>Visually inspect the SERP</li>
+                        <li>If direct answer exists, right-click → Inspect</li>
+                        <li>In DevTools, add class <code style="background: #f5f5f5; padding: 2px 6px; border-radius: 3px;">fb</code> to the element</li>
+                        <li>Element will be highlighted in yellow</li>
+                        <li>Click "Save & Next"</li>
+                    </ol>
+                </div>
+
+                <div style="display: none; background: #f0f7ff; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+                    <strong>💡 DevTools Console:</strong>
+                    <p style="margin: 10px 0 0 0; font-size: 13px;">
+                        Select element in inspector, then in console:<br>
+                        <code style="background: #282c34; color: #61dafb; padding: 4px 8px; border-radius: 3px; display: block; margin-top: 5px;">$0.classList.add('fb')</code>
+                    </p>
+                    <p style="margin: 10px 0 0 0; font-size: 13px;">
+                        To remove:<br>
+                        <code style="background: #282c34; color: #61dafb; padding: 4px 8px; border-radius: 3px; display: block; margin-top: 5px;">$0.classList.remove('fb')</code>
+                    </p>
+                </div>
+
+                <!-- Keyboard Shortcuts -->
+                <div style="display: none; background: #e8f5e9; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+                    <strong style="color: #2e7d32;">⌨️ Keyboard Shortcuts:</strong>
+                    <div style="margin-top: 10px; display: flex; gap: 15px; flex-wrap: wrap;">
+                        <div style="font-size: 13px;">
+                            <kbd style="background: #fff; border: 1px solid #ccc; padding: 3px 8px; border-radius: 3px; font-family: monospace;">1</kbd>
+                            <span style="margin-left: 5px;">Skip SERP</span>
+                        </div>
+                        <div style="font-size: 13px;">
+                            <kbd style="background: #fff; border: 1px solid #ccc; padding: 3px 8px; border-radius: 3px; font-family: monospace;">2</kbd>
+                            <span style="margin-left: 5px;">Accept FB</span>
+                        </div>
+                        <div style="font-size: 13px;">
+                            <kbd style="background: #fff; border: 1px solid #ccc; padding: 3px 8px; border-radius: 3px; font-family: monospace;">3</kbd>
+                            <span style="margin-left: 5px;">Save & Next</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- XPath Testing Panel -->
+                <div style="margin-bottom: 20px; padding-bottom: 20px; border-bottom: 2px solid #2196F3;">
+                    <h3 style="color: #2196F3; margin: 0 0 15px 0;">
+                        Annotate FB #<span id="current-fb-id">1</span>
+                    </h3>
+                </div>
+
+                <!-- Step 1: Mark Element -->
+                <div style="margin-bottom: 20px;">
+                    <strong style="display: block; margin-bottom: 10px;">📍 Step 1: Mark Element</strong>
+                    <p style="margin: 5px 0; font-size: 13px; color: #666;">
+                        In DevTools console, select element and run:
+                    </p>
+                    <code style="background: #282c34; color: #61dafb; padding: 8px; border-radius: 3px; display: block; margin-top: 5px; font-size: 12px;">
+                        $0.classList.add('fb-testing')
+                    </code>
+                    <p style="margin: 10px 0 0 0; font-size: 12px; color: #999; font-style: italic;">
+                        💡 Element will get an orange outline
+                    </p>
+                </div>
+
+                <!-- Step 2: Category Selection -->
+                <div class="form-group">
+                    <strong style="display: block; margin-bottom: 10px;">
+                        🏷️ Step 2: Select Category
+                        <span id="category-provider-label" style="font-size: 12px; font-weight: normal; color: #666;"></span>
+                    </strong>
+
+                    <!-- NEW: Button Grid Interface -->
+                    <div id="category-buttons" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); gap: 8px; margin-bottom: 15px;">
+                        <!-- Categories will be populated here -->
+                    </div>
+
+                    <!-- OLD: Dropdown (hidden but kept for future) -->
+                    <select id="category-select" class="form-control" disabled style="display: none; background-color: #f5f5f5;">
+                        <option value="">-- Loading categories... --</option>
+                    </select>
+                </div>
+
+
+                <!-- Step 3: XPath Tools - HIDDEN FOR NOW -->
+                <div class="form-group" style="display: none; border: 2px solid #e0e0e0; border-radius: 8px; padding: 15px; background: #fafafa;">
+                    <strong style="display: block; margin-bottom: 5px; font-size: 16px;">🔍 Step 3: Enter & Test XPath <span style="font-size: 12px; font-weight: normal; color: #999;">(Optional)</span></strong>
+                    <p style="margin: 0 0 15px 0; font-size: 12px; color: #666;">
+                        💡 You can skip this step and accept without XPath. Add XPath later using LLM from multiple examples.
+                    </p>
+
+                    <!-- 3a. XPath Input -->
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">
+                            ✏️ Enter XPath Expression
+                        </label>
+                        <textarea id="xpath-input"
+                                  class="form-control"
+                                  rows="3"
+                                  placeholder="//*[contains(concat(' ', normalize-space(@class), ' '), ' kp-blk ')]"
+                                  style="font-family: 'Courier New', monospace; font-size: 12px;"></textarea>
+                    </div>
+
+                    <!-- 3b. Try Existing XPaths -->
+                    <div id="xpath-suggestions-section" style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">
+                            💡 Or Select from Existing XPaths
+                            <span style="font-size: 11px; font-weight: normal; color: #999;">(sorted by usage)</span>
+                        </label>
+                        <select id="xpath-suggestions" class="form-control" disabled
+                                style="font-family: 'Courier New', monospace; font-size: 12px; background-color: #f5f5f5;">
+                            <option value="">-- Select a category first --</option>
+                        </select>
+                        <div id="xpath-loading" style="display: none; margin-top: 5px; font-size: 12px; color: #666;">
+                            <span>⏳ Loading suggestions...</span>
+                        </div>
+                    </div>
+
+                    <!-- TODO 3c. LLM XPath Helper -->
+                    <div id="llm-xpath-helper" style="margin-bottom: 15px; padding: 10px; background: #fff3cd; border: 1px dashed #ffc107; border-radius: 5px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #856404;">
+                            🤖 LLM XPath Generator (Coming Soon)
+                        </label>
+                        <button id="generate-xpath-btn" class="btn-secondary" disabled
+                                style="width: 100%; background: #ffc107; color: #856404; cursor: not-allowed; opacity: 0.6;">
+                            ✨ Generate XPath with AI (Not Yet Implemented)
+                        </button>
+                        <div style="font-size: 11px; color: #856404; margin-top: 5px;">
+                            💡 Future: LLM will analyze the marked element and suggest XPath expressions
+                        </div>
+                    </div>
+
+                    <!-- 3d. Test XPath Button -->
+                    <div>
+                        <button id="test-xpath-btn" class="btn-secondary"
+                                style="width: 100%; background: #2196F3; padding: 12px; font-weight: 600;">
+                            🔍 Test XPath
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Test Result -->
+                <div id="test-result" class="test-result" style="display: none;">
+                    <div id="result-message" class="result-message"></div>
+                    <button id="toggle-details" class="btn-link">Show details ▼</button>
+                    <div id="result-details" class="result-details" style="display: none;">
+                        <div class="detail-section">
+                            <strong>Marked element:</strong>
+                            <pre id="human-html"></pre>
+                        </div>
+                        <div class="detail-section">
+                            <strong>XPath result:</strong>
+                            <pre id="xpath-html"></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Working XPaths List -->
+                <div id="working-xpaths-section" style="display: none; margin-top: 15px; padding: 10px; background: #e8f5e9; border: 1px solid #4CAF50; border-radius: 5px;">
+                    <strong style="display: block; margin-bottom: 8px; color: #2e7d32;">✓ Working XPaths</strong>
+                    <ul id="working-xpaths-list" style="margin: 0; padding-left: 20px; font-size: 12px; max-height: 120px; overflow-y: auto;"></ul>
+                </div>
+
+                <!-- Step 4: Accept FB -->
+                <div class="form-group">
+                    <strong style="display: block; margin-bottom: 10px;">✓ Step 3: Accept FB</strong>
+                    <button id="accept-btn" class="btn-primary" disabled style="width: 100%;">
+                        ✓ Accept & Next FB <span style="opacity: 0.7; font-size: 14px;">[2]</span>
+                    </button>
+                </div>
+
+                <!-- Step 5: Review Accepted FBs -->
+                <div class="form-group" style="margin-top: 20px; padding-top: 20px; border-top: 2px solid #ddd;">
+                    <strong style="display: block; margin-bottom: 10px;">📋 Review Accepted FBs</strong>
+                    <p style="margin: 0 0 10px 0;">
+                        <strong>Total Accepted:</strong>
+                        <span id="accepted-count" style="color: #4CAF50; font-size: 18px; font-weight: bold; margin-left: 10px;">0</span>
+                    </p>
+                    <ul id="accepted-list" style="list-style: none; padding-left: 0; margin: 0;"></ul>
+                </div>
+
+                <!-- Step 6: Save & Move to Next SERP -->
+                <div class="form-group" style="margin-top: 20px; padding-top: 20px; border-top: 2px solid #ddd;">
+                    <strong style="display: block; margin-bottom: 10px;">💾 Step 4: Save & Continue</strong>
+                    <button id="save-btn" class="btn-warning" disabled style="width: 100%; padding: 15px; font-size: 16px;">
+                        💾 Save & Next <span style="opacity: 0.7; font-size: 14px;">[3]</span>
+                    </button>
+                    <button class="btn-secondary" onclick="skipSerp()" style="width: 100%; margin-top: 10px;">
+                        ⏭️ Skip (No FB) <span style="opacity: 0.7; font-size: 14px;">[1]</span>
+                    </button>
+                </div>
+
+                <!-- Keyboard Shortcuts Info (Minimal) -->
+                <div style="margin-top: 20px; padding: 12px; background: #f5f5f5; border-radius: 5px; font-size: 12px; color: #666;">
+                    <strong style="color: #333;">⌨️ Shortcuts:</strong>
+                    <span style="margin-left: 10px;">
+                        <kbd style="background: #fff; border: 1px solid #ccc; padding: 2px 6px; border-radius: 3px; font-family: monospace;">1</kbd> Skip
+                        &nbsp;|&nbsp;
+                        <kbd style="background: #fff; border: 1px solid #ccc; padding: 2px 6px; border-radius: 3px; font-family: monospace;">2</kbd> Accept
+                        &nbsp;|&nbsp;
+                        <kbd style="background: #fff; border: 1px solid #ccc; padding: 2px 6px; border-radius: 3px; font-family: monospace;">3</kbd> Save
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Use relative URLs - automatically uses the same port as the server
+        const API_BASE = "";
+
+        // State
+        let currentMode = null;  // 'remote' or 'local'
+        let currentSerpIds = []; // List of SERP IDs to annotate
+        let currentIndex = 0;    // Current position in the list
+        let isProcessing = false; // Prevent concurrent save/skip operations
+        let currentFolder = null; // For local mode
+        let batchName = null;     // For remote mode
+
+        // XPath Testing State
+        let currentFbId = 1;     // ID for current FB being annotated
+        let acceptedFbs = [];    // Cache of accepted FBs: [{id, category, xpath, working_xpaths}, ...]
+        let currentSerpId = null;  // Current SERP ID being annotated
+        let annotation_session = null; // Global session info for XPath collection
+        let workingXpaths = [];    // Working XPaths for current FB being tested
+
+        // Initialize on page load — fetch SERP IDs from CLI session
+        async function init() {
+            try {
+                const resp = await fetch(`${API_BASE}/serp-ids`);
+                const data = await resp.json();
+
+                if (!data.serp_ids || data.serp_ids.length === 0) {
+                    document.getElementById("loading-session").textContent =
+                        "No SERP IDs available. Check server logs.";
+                    return;
+                }
+
+                annotation_session = data;
+                currentMode = "remote-ids";
+                currentSerpIds = data.serp_ids;
+                currentIndex = 0;
+
+                document.getElementById("loading-session").style.display = "none";
+                document.getElementById("remote-session").style.display = "block";
+
+                document.getElementById("session-details").innerHTML = `
+                    <h3>Session Info</h3>
+                    <p><strong>Provider:</strong> ${data.provider}</p>
+                    <p><strong>Year:</strong> ${data.year}</p>
+                    <p><strong>Language:</strong> ${data.language.toUpperCase()}</p>
+                    <p><strong>Batch SERPs:</strong> <span style="color: #4CAF50; font-size: 20px;">${data.total}</span></p>
+                `;
+
+                loadCategories(data.provider);
+
+            } catch (err) {
+                console.error(err);
+                document.getElementById("loading-session").textContent =
+                    "Failed to connect to server.";
+            }
+        }
+
+        async function startAnnotation() {
+            document.getElementById("setup-screen").style.display = "none";
+            document.getElementById("annotation-workspace").style.display = "block";
+            loadSerp(currentIndex);
+        }
+
+        // Load FB categories from backend config
+        async function loadCategories(provider) {
+            const categorySelect = document.getElementById('category-select');
+            const categoryButtons = document.getElementById('category-buttons');
+            const providerLabel = document.getElementById('category-provider-label');
+
+            if (!provider) {
+                console.warn('⚠️ [Categories] No provider specified, cannot load categories');
+                categorySelect.innerHTML = '<option value="">-- No provider specified --</option>';
+                categorySelect.disabled = true;
+                categoryButtons.innerHTML = '<div style="color: #999; padding: 10px;">No provider specified</div>';
+                return;
+            }
+
+            console.log(`🔍 [Categories] Loading categories for provider: ${provider}`);
+
+            try {
+                // Fetch categories from backend
+                const response = await fetch(`${API_BASE}/get-categories?provider=${provider}`);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                // Update provider label
+                providerLabel.textContent = `(${data.name} Taxonomy)`;
+
+                // Populate category dropdown (kept for future use, hidden)
+                categorySelect.innerHTML = '<option value="">-- Select Category --</option>';
+
+                // Populate category button grid (NEW)
+                categoryButtons.innerHTML = '';
+
+                if (data.categories && data.categories.length > 0) {
+                    // Sort categories alphabetically, but keep "placeholder" at the end
+                    // and group related categories together
+                    const packGroupLabels = ['image pack', 'knowledge panel', 'local pack'];
+
+                    const sortedCategories = [...data.categories].sort((a, b) => {
+                        // Always put placeholder at the end
+                        if (a.id === 'placeholder') return 1;
+                        if (b.id === 'placeholder') return -1;
+
+                        // Group pack-related categories together (match by label, case-insensitive)
+                        const aLabelLower = a.label.toLowerCase();
+                        const bLabelLower = b.label.toLowerCase();
+                        const aIsPack = packGroupLabels.some(label => aLabelLower.includes(label));
+                        const bIsPack = packGroupLabels.some(label => bLabelLower.includes(label));
+
+                        if (aIsPack && bIsPack) {
+                            // Both are in pack group, maintain specific order
+                            const aIndex = packGroupLabels.findIndex(label => aLabelLower.includes(label));
+                            const bIndex = packGroupLabels.findIndex(label => bLabelLower.includes(label));
+                            return aIndex - bIndex;
+                        }
+
+                        if (aIsPack) {
+                            // Treat pack group as "knowledge panel" for sorting
+                            return 'knowledge panel'.localeCompare(b.label);
+                        }
+
+                        if (bIsPack) {
+                            // Treat pack group as "knowledge panel" for sorting
+                            return a.label.localeCompare('knowledge panel');
+                        }
+
+                        // Sort others alphabetically by label
+                        return a.label.localeCompare(b.label);
+                    });
+
+                    // Group categories into sections and add dividers
+                    // Groups: C | D-P | R-W | Placeholder
+                    let currentGroup = '';
+
+                    const getLetterGroup = (letter) => {
+                        if (letter === 'C') return 'C';
+                        if (letter >= 'D' && letter <= 'P') return 'D-P';
+                        if (letter >= 'R' && letter <= 'W') return 'R-W';
+                        return letter; // For anything else (A, B, etc.)
+                    };
+
+                    sortedCategories.forEach(cat => {
+                        // Add to dropdown (hidden but kept)
+                        const option = document.createElement('option');
+                        option.value = cat.id;
+                        option.textContent = cat.label;
+                        if (cat.description) {
+                            option.title = cat.description;
+                        }
+                        categorySelect.appendChild(option);
+
+                        // Determine which group this category belongs to
+                        let categoryGroup;
+                        if (cat.id === 'placeholder') {
+                            categoryGroup = 'placeholder';
+                        } else {
+                            const catLabelLower = cat.label.toLowerCase();
+                            const isPackGroup = packGroupLabels.some(label => catLabelLower.includes(label));
+                            const firstLetter = isPackGroup ? 'K' : cat.label.charAt(0).toUpperCase();
+                            categoryGroup = getLetterGroup(firstLetter);
+                        }
+
+                        // Add divider when entering a new group
+                        if (categoryGroup !== currentGroup) {
+                            const divider = document.createElement('div');
+                            divider.className = 'alphabet-divider';
+                            categoryButtons.appendChild(divider);
+                            currentGroup = categoryGroup;
+                        }
+
+                        // Add to button grid (NEW)
+                        const btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.className = 'category-btn';
+                        btn.dataset.categoryId = cat.id;
+                        btn.textContent = cat.label;
+                        if (cat.description) {
+                            btn.title = cat.description; // Tooltip on hover
+                        }
+
+                        // Click handler for button
+                        btn.onclick = () => selectCategory(cat.id, cat.label);
+
+                        categoryButtons.appendChild(btn);
+                    });
+
+                    // Enable dropdown
+                    categorySelect.disabled = false;
+                    categorySelect.style.backgroundColor = '#ffffff';
+
+                    console.log(`✅ [Categories] Loaded ${data.categories.length} categories for ${data.name}`);
+                } else {
+                    categorySelect.innerHTML = '<option value="">-- No categories found --</option>';
+                    categorySelect.disabled = true;
+                    categoryButtons.innerHTML = '<div style="color: #999; padding: 10px;">No categories found</div>';
+                    console.warn(`⚠️ [Categories] No categories found for provider: ${provider}`);
+                }
+
+            } catch (error) {
+                console.error('❌ [Categories] Failed to load categories:', error);
+                categorySelect.innerHTML = '<option value="">-- Error loading categories --</option>';
+                categorySelect.disabled = true;
+                categorySelect.style.backgroundColor = '#ffe0e0';
+                categoryButtons.innerHTML = '<div style="color: #f44336; padding: 10px;">Error loading categories</div>';
+            }
+        }
+
+        // Handle category selection from button grid
+        function selectCategory(categoryId, categoryLabel) {
+            // Update visual state
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            const selectedBtn = document.querySelector(`[data-category-id="${categoryId}"]`);
+            if (selectedBtn) {
+                selectedBtn.classList.add('selected');
+            }
+
+            // Update hidden dropdown (for compatibility with existing code)
+            const categorySelect = document.getElementById('category-select');
+            categorySelect.value = categoryId;
+
+            // Trigger change event to enable accept button
+            categorySelect.dispatchEvent(new Event('change'));
+
+            console.log(`✅ Category selected: ${categoryLabel} (${categoryId})`);
+        }
+
+        async function loadSerp(index) {
+            if (index >= currentSerpIds.length) {
+                // All SERPs completed
+                alert("All SERPs completed! 🎉");
+                exitWorkspace();
+                return;
+            }
+
+            currentIndex = index;
+
+            // Get current SERP ID
+            const serpId = currentSerpIds[index];
+            currentSerpId = serpId; // Store for XPath testing
+
+            // Reset XPath testing state
+            currentFbId = 1;
+            acceptedFbs = [];
+            workingXpaths = [];
+            updateAcceptedList();
+            updateWorkingXpathsList();
+            document.getElementById("current-fb-id").textContent = currentFbId;
+            document.getElementById("category-select").value = "";
+            document.getElementById("xpath-input").value = "";
+            document.getElementById("test-result").style.display = "none";
+            document.getElementById("accept-btn").disabled = true;
+
+            // Clear category button selection (NEW)
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+
+            // Reset save button explicitly
+            const saveBtn = document.getElementById("save-btn");
+            saveBtn.disabled = true;
+            saveBtn.textContent = "💾 Save & Next SERP";
+
+            // Update progress with SERP ID and raw mode toggle
+            const rawCheckbox = document.getElementById("raw-mode-checkbox");
+            const isRaw = rawCheckbox ? rawCheckbox.checked : false;
+
+            document.getElementById("progress-info").innerHTML =
+                `<span style="font-size: 14px;">Progress: ${index + 1} / ${currentSerpIds.length}</span> &nbsp;|&nbsp; ` +
+                `<code style="font-size: 14px; background: #eee; padding: 2px 6px; border-radius: 3px;">${serpId}</code> &nbsp;` +
+                `<label style="font-size: 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; background: ${isRaw ? '#ffebee' : '#fff'}; border: 1px solid #f44336; border-radius: 4px;">` +
+                `<input type="checkbox" id="raw-mode-checkbox" ${isRaw ? 'checked' : ''} onchange="toggleRawMode()" style="width: 18px; height: 18px; cursor: pointer; accent-color: #f44336;"> ` +
+                `<span style="font-weight: 500; color: #d32f2f;">Raw SERP</span></label>`;
+
+            // Load SERP in iframe
+            loadSerpInIframe(serpId, isRaw);
+        }
+
+        // Load SERP into iframe with optional raw mode
+        function loadSerpInIframe(serpId, raw = false) {
+            const iframe = document.getElementById("serp-iframe");
+            const rawParam = raw ? "?raw=true" : "";
+
+            // Set up iframe load handler to inject CSS and initialize event listeners
+            iframe.onload = function() {
+                injectFbStyles();
+                initializeXPathTesting();
+            };
+
+            iframe.src = `${API_BASE}/serp-id/${serpId}${rawParam}`;
+        }
+
+        // Initialize XPath testing event listeners
+        function initializeXPathTesting() {
+            // Test XPath button
+            document.getElementById('test-xpath-btn').onclick = async () => {
+                const xpath = document.getElementById('xpath-input').value.trim();
+                const category = document.getElementById('category-select').value;
+
+                // Validation
+                if (!category) {
+                    alert('Please select a category first');
+                    return;
+                }
+
+                if (!xpath) {
+                    alert('Please enter an XPath expression to test');
+                    return;
+                }
+
+                // Check if element is marked
+                const iframe = document.getElementById('serp-iframe');
+                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                const markedEl = iframeDoc.querySelector('.fb-testing');
+
+                if (!markedEl) {
+                    alert('No element marked with "fb-testing" class. Please mark an element first using DevTools.');
+                    return;
+                }
+
+                // Get iframe HTML
+                const iframeHtml = iframeDoc.documentElement.outerHTML;
+
+                // Show loading state
+                const testBtn = document.getElementById('test-xpath-btn');
+                const originalText = testBtn.textContent;
+                testBtn.textContent = '⏳ Testing...';
+                testBtn.disabled = true;
+
+                try {
+                    // Send to backend
+                    const response = await fetch(`${API_BASE}/test-xpath`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            html: iframeHtml,
+                            xpath: xpath
+                        })
+                    });
+
+                    const result = await response.json();
+
+                    // Display result
+                    displayTestResult(result);
+
+                } catch (error) {
+                    alert('Error testing XPath: ' + error.message);
+                } finally {
+                    // Restore button
+                    testBtn.textContent = originalText;
+                    testBtn.disabled = false;
+                }
+            };
+
+            // Toggle details button
+            document.getElementById('toggle-details').onclick = (e) => {
+                const details = document.getElementById('result-details');
+                const btn = e.target;
+
+                if (details.style.display === 'none') {
+                    details.style.display = 'block';
+                    btn.textContent = 'Hide details ▲';
+                } else {
+                    details.style.display = 'none';
+                    btn.textContent = 'Show details ▼';
+                }
+            };
+
+            // Accept FB button
+            document.getElementById('accept-btn').onclick = () => {
+                acceptFb();
+            };
+
+            // Save & Next SERP button
+            document.getElementById('save-btn').onclick = async () => {
+                await saveAllFbs();
+            };
+
+            // Keyboard shortcuts
+            document.addEventListener('keydown', (e) => {
+                // Ignore if typing in input fields
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
+                    return;
+                }
+
+                const acceptBtn = document.getElementById('accept-btn');
+                const saveBtn = document.getElementById('save-btn');
+
+                if (e.key === '1') {
+                    // Skip SERP
+                    e.preventDefault();
+                    skipSerp();
+                } else if (e.key === '2') {
+                    // Accept FB
+                    e.preventDefault();
+                    if (!acceptBtn.disabled) {
+                        acceptBtn.click();
+                    }
+                } else if (e.key === '3') {
+                    // Save & Next
+                    e.preventDefault();
+                    if (!saveBtn.disabled) {
+                        saveBtn.click();
+                    }
+                }
+            });
+
+            // Category selection change - fetch XPath suggestions
+            document.getElementById('category-select').onchange = async (e) => {
+                const category = e.target.value;
+                const suggestionsSelect = document.getElementById('xpath-suggestions');
+                const acceptBtn = document.getElementById('accept-btn');
+
+                console.log('🔍 [XPath Dropdown] Category selected:', category);
+
+                // No category selected - disable dropdown and reset
+                if (!category) {
+                    console.log('⚠️ [XPath Dropdown] No category selected, disabling dropdown');
+                    suggestionsSelect.disabled = true;
+                    suggestionsSelect.style.backgroundColor = '#f5f5f5';
+                    suggestionsSelect.innerHTML = '<option value="">-- Select a category first --</option>';
+                    acceptBtn.disabled = true;  // Disable accept when no category
+                    return;
+                }
+
+                // Enable accept button when category is selected (XPath is optional)
+                // Check if element is marked
+                const iframe = document.getElementById('serp-iframe');
+                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                const markedEl = iframeDoc.querySelector('.fb-testing');
+                if (markedEl) {
+                    acceptBtn.disabled = false;
+                    console.log('✓ Accept button enabled - category selected and element marked');
+                }
+
+                // Session not available - disable and show error
+                if (!annotation_session) {
+                    console.error('❌ [XPath Dropdown] annotation_session is null! Cannot fetch XPaths.');
+                    suggestionsSelect.disabled = true;
+                    suggestionsSelect.style.backgroundColor = '#ffe0e0';
+                    suggestionsSelect.innerHTML = '<option value="">-- Session error (refresh page) --</option>';
+                    return;
+                }
+
+                console.log('✅ [XPath Dropdown] Fetching suggestions...');
+
+                // Show loading state
+                suggestionsSelect.disabled = true;
+                suggestionsSelect.style.backgroundColor = '#f5f5f5';
+                document.getElementById('xpath-loading').style.display = 'block';
+
+                try {
+                    // Fetch XPath suggestions
+                    const provider_year = `${annotation_session.engine}-${annotation_session.year}`;
+                    const url = `${API_BASE}/get-xpaths?provider_year=${provider_year}&category=${encodeURIComponent(category)}`;
+                    console.log('🔍 [XPath Dropdown] Fetching from:', url);
+
+                    const response = await fetch(url);
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    console.log('🔍 [XPath Dropdown] Response data:', data);
+
+                    // Populate dropdown
+                    suggestionsSelect.innerHTML = '<option value="">-- Select from library or type your own below --</option>';
+
+                    if (data.xpaths && data.xpaths.length > 0) {
+                        data.xpaths.forEach(xpath => {
+                            const option = document.createElement('option');
+                            option.value = xpath.expression;
+                            const usageInfo = `(used ${xpath.usage_count}x)`;
+                            option.textContent = `${xpath.expression.substring(0, 60)}... ${usageInfo}`;
+                            option.title = xpath.expression; // Full XPath on hover
+                            suggestionsSelect.appendChild(option);
+                        });
+                        console.log(`✅ [XPath Dropdown] Loaded ${data.xpaths.length} XPath suggestions for ${category}`);
+                    } else {
+                        const option = document.createElement('option');
+                        option.value = '';
+                        option.textContent = '(No existing XPaths for this category - type your own below)';
+                        option.disabled = true;
+                        suggestionsSelect.appendChild(option);
+                        console.log('ℹ️ [XPath Dropdown] No existing XPaths found for this category');
+                    }
+
+                    // Enable dropdown
+                    suggestionsSelect.disabled = false;
+                    suggestionsSelect.style.backgroundColor = '#ffffff';
+
+                } catch (error) {
+                    console.error('❌ [XPath Dropdown] Failed to load XPath suggestions:', error);
+                    suggestionsSelect.innerHTML = '<option value="">-- Error loading suggestions --</option>';
+                    suggestionsSelect.disabled = true;
+                    suggestionsSelect.style.backgroundColor = '#ffe0e0';
+                } finally {
+                    document.getElementById('xpath-loading').style.display = 'none';
+                }
+            };
+
+            // XPath suggestion selection - populate input
+            document.getElementById('xpath-suggestions').onchange = (e) => {
+                const selectedXPath = e.target.value;
+                if (selectedXPath) {
+                    document.getElementById('xpath-input').value = selectedXPath;
+                    console.log('✅ Selected XPath from library');
+                }
+            };
+        }
+
+        // Toggle between raw and cleaned SERP view
+        function toggleRawMode() {
+            const rawCheckbox = document.getElementById("raw-mode-checkbox");
+            const isRaw = rawCheckbox ? rawCheckbox.checked : false;
+            const serpId = currentSerpIds[currentIndex];
+
+            loadSerpInIframe(serpId, isRaw);
+        }
+
+        function injectFbStyles() {
+            // Inject CSS into iframe to highlight FB elements in different states
+            try {
+                const iframe = document.getElementById("serp-iframe");
+                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+
+                // Check if style already exists
+                if (!iframeDoc.getElementById("fb-highlight-style")) {
+                    const style = iframeDoc.createElement("style");
+                    style.id = "fb-highlight-style";
+                    style.textContent = `
+                        /* Testing state - Orange outline */
+                        .fb-testing {
+                            outline: 3px solid #FFA500 !important;
+                            outline-offset: 2px;
+                            background-color: rgba(255, 165, 0, 0.1) !important;
+                            transition: all 0.3s ease;
+                        }
+
+                        /* Accepted state - Green outline, dimmed */
+                        .fb-accepted {
+                            outline: 2px solid #4CAF50 !important;
+                            outline-offset: 2px;
+                            background-color: rgba(76, 175, 80, 0.1) !important;
+                            opacity: 0.7;
+                            transition: all 0.3s ease;
+                        }
+
+                        /* Saved state - Blue outline (for saved HTML files) */
+                        .fb {
+                            outline: 3px solid #2196F3 !important;
+                            outline-offset: 2px;
+                            background-color: rgba(33, 150, 243, 0.1) !important;
+                        }
+                    `;
+                    iframeDoc.head.appendChild(style);
+                }
+
+                console.log('✅ FB highlighting styles injected');
+            } catch (err) {
+                console.error("Failed to inject FB styles:", err);
+            }
+        }
+
+        function refreshCount() {
+            // Count .fb elements in iframe
+            try {
+                const iframe = document.getElementById("serp-iframe");
+                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                const fbElements = iframeDoc.querySelectorAll(".fb");
+                document.getElementById("fb-count").textContent = fbElements.length;
+            } catch (err) {
+                console.error("Failed to count FB elements:", err);
+            }
+        }
+
+        async function saveAndNext() {
+            // Extract modified HTML from iframe (with "fb" classes)
+            let annotatedHtml = null;
+            try {
+                const iframe = document.getElementById("serp-iframe");
+                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+
+                // Get the full HTML with "fb" classes
+                annotatedHtml = iframeDoc.documentElement.outerHTML;
+
+                // Count FB elements
+                const fbCount = iframeDoc.querySelectorAll(".fb").length;
+
+                if (fbCount === 0) {
+                    const confirmSave = confirm("No FB elements marked. Save anyway?");
+                    if (!confirmSave) return;
+                }
+
+                console.log(`Saving SERP with ${fbCount} FB elements marked`);
+            } catch (err) {
+                alert(`Failed to extract HTML: ${err.message}`);
+                return;
+            }
+
+            // Save to server
+            try {
+                const endpoint = `/save-annotation/${currentSerpIds[currentIndex]}`;
+
+                // Prepare payload with HTML and optional XPath
+                const payload = {
+                    html: annotatedHtml,
+                    xpath: acceptedXPath  // null if not set
+                };
+
+                const resp = await fetch(`${API_BASE}${endpoint}`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!resp.ok) {
+                    throw new Error(`Save failed: ${resp.status}`);
+                }
+
+                console.log("✅ Annotated SERP saved successfully");
+                if (acceptedXPath) {
+                    console.log(`   XPath saved: ${acceptedXPath}`);
+                }
+
+                // Reset XPath for next SERP
+                acceptedXPath = null;
+                document.getElementById("xpath-input").value = "";
+                clearXPathHighlights();
+
+                // Load next SERP
+                loadSerp(currentIndex + 1);
+
+            } catch (err) {
+                alert(`Failed to save annotation: ${err.message}`);
+            }
+        }
+
+        async function skipSerp() {
+            // Prevent concurrent skip operations
+            if (isProcessing) {
+                console.log('⚠️ Skip already in progress, ignoring duplicate call');
+                return;
+            }
+            isProcessing = true;
+
+            // Save SERP with fb_num=0 before moving to next
+            const iframe = document.getElementById("serp-iframe");
+            if (!iframe || !iframe.contentDocument) {
+                alert("Cannot access iframe content");
+                isProcessing = false;
+                return;
+            }
+
+            try {
+                // Get unmodified HTML from iframe (no fb classes)
+                const unmodifiedHtml = iframe.contentDocument.documentElement.outerHTML;
+
+                const endpoint = `/save-annotation/${currentSerpIds[currentIndex]}`;
+
+                const resp = await fetch(`${API_BASE}${endpoint}`, {
+                    method: "POST",
+                    headers: { "Content-Type": "text/html" },
+                    body: unmodifiedHtml
+                });
+
+                if (!resp.ok) {
+                    throw new Error(`Skip save failed: ${resp.status}`);
+                }
+
+                console.log("✅ Skipped SERP saved successfully (fb_num=0)");
+
+                // Load next SERP
+                loadSerp(currentIndex + 1);
+                isProcessing = false;
+
+            } catch (err) {
+                isProcessing = false;
+                alert(`Failed to save skip: ${err.message}`);
+            }
+        }
+
+        async function exitWorkspace() {
+            document.getElementById("annotation-workspace").style.display = "none";
+            document.getElementById("setup-screen").style.display = "block";
+            document.getElementById("serp-iframe").src = "about:blank";
+            init();
+        }
+
+        // =============================
+        // XPath Testing Functions
+        // =============================
+
+        function displayTestResult(result) {
+            const resultDiv = document.getElementById('test-result');
+            const messageDiv = document.getElementById('result-message');
+            const humanHtmlPre = document.getElementById('human-html');
+            const xpathHtmlPre = document.getElementById('xpath-html');
+            const acceptBtn = document.getElementById('accept-btn');
+            const detailsDiv = document.getElementById('result-details');
+            const toggleBtn = document.getElementById('toggle-details');
+
+            // Show result div
+            resultDiv.style.display = 'block';
+
+            // Hide details by default
+            detailsDiv.style.display = 'none';
+            toggleBtn.textContent = 'Show details ▼';
+
+            if (result.success && result.match) {
+                // Match!
+                resultDiv.className = 'test-result match';
+                messageDiv.innerHTML = '<strong>✓ Match!</strong> XPath extracts the same content as marked element.';
+                acceptBtn.disabled = false;
+
+                // Add to working XPaths if not already present
+                const xpath = document.getElementById('xpath-input').value.trim();
+                if (xpath && !workingXpaths.includes(xpath)) {
+                    workingXpaths.push(xpath);
+                    updateWorkingXpathsList();
+                }
+
+            } else if (result.success && !result.match) {
+                // Mismatch
+                resultDiv.className = 'test-result mismatch';
+                messageDiv.innerHTML = '<strong>✗ Mismatch</strong> ' + (result.message || 'XPath extracts different content.');
+                acceptBtn.disabled = true;
+
+            } else {
+                // Error
+                resultDiv.className = 'test-result error';
+                messageDiv.innerHTML = '<strong>⚠️ Error</strong> ' + (result.message || 'Failed to test XPath');
+                acceptBtn.disabled = true;
+            }
+
+            // Populate details
+            humanHtmlPre.textContent = result.human_html || 'N/A';
+            xpathHtmlPre.textContent = result.xpath_html || 'N/A';
+        }
+
+        function updateWorkingXpathsList() {
+            const section = document.getElementById('working-xpaths-section');
+            const list = document.getElementById('working-xpaths-list');
+
+            if (workingXpaths.length === 0) {
+                section.style.display = 'none';
+                return;
+            }
+
+            section.style.display = 'block';
+            list.innerHTML = '';
+
+            workingXpaths.forEach((xpath, index) => {
+                const li = document.createElement('li');
+                li.style.cssText = 'margin: 5px 0; word-break: break-all;';
+                li.textContent = xpath.substring(0, 80) + (xpath.length > 80 ? '...' : '');
+                li.title = xpath;
+                list.appendChild(li);
+            });
+        }
+
+        function updateAcceptedList() {
+            const countSpan = document.getElementById('accepted-count');
+            const listUl = document.getElementById('accepted-list');
+
+            countSpan.textContent = acceptedFbs.length;
+
+            listUl.innerHTML = '';
+
+            if (acceptedFbs.length === 0) {
+                listUl.innerHTML = '<li style="color: #999; font-style: italic; padding: 5px 0;">None yet</li>';
+                return;
+            }
+
+            acceptedFbs.forEach(fb => {
+                const li = document.createElement('li');
+                li.style.cssText = 'padding: 8px 0; border-bottom: 1px solid #eee;';
+                li.innerHTML = `
+                    <strong>#${fb.id}</strong>: ${fb.category}
+                    <span style="color: #4CAF50; margin-left: 5px;">✓</span>
+                `;
+                listUl.appendChild(li);
+            });
+        }
+
+        function acceptFb() {
+            const xpath = document.getElementById('xpath-input').value.trim();
+            const category = document.getElementById('category-select').value;
+
+            // Find the marked element in iframe
+            const iframe = document.getElementById('serp-iframe');
+            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+            const markedEl = iframeDoc.querySelector('.fb-testing');
+
+            if (!markedEl) {
+                alert('No element marked with "fb-testing" class');
+                return;
+            }
+
+            // Update element state
+            markedEl.classList.remove('fb-testing');
+            markedEl.classList.add('fb-accepted');
+            markedEl.dataset.fbIndex = currentFbId;
+            markedEl.dataset.fbCategory = category;
+            markedEl.dataset.fbXpath = xpath;
+
+            // Cache accepted FB with working XPaths
+            acceptedFbs.push({
+                id: currentFbId,
+                category: category,
+                xpath: xpath,
+                working_xpaths: [...workingXpaths]  // Copy array
+            });
+
+            // Update UI
+            updateAcceptedList();
+            currentFbId++;
+            document.getElementById('current-fb-id').textContent = currentFbId;
+
+            // Reset form
+            document.getElementById('xpath-input').value = '';
+            document.getElementById('category-select').value = '';
+            document.getElementById('test-result').style.display = 'none';
+            document.getElementById('accept-btn').disabled = true;
+            workingXpaths = [];  // Clear working XPaths for next FB
+            updateWorkingXpathsList();
+
+            // Clear category button selection (NEW)
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+
+            // Enable save button
+            document.getElementById('save-btn').disabled = false;
+
+            console.log(`✓ FB #${currentFbId - 1} accepted with ${workingXpaths.length} working XPaths`);
+        }
+
+        async function saveAllFbs() {
+            // Prevent concurrent save operations
+            if (isProcessing) {
+                console.log('⚠️ Save already in progress, ignoring duplicate call');
+                return;
+            }
+
+            if (acceptedFbs.length === 0) {
+                alert('No FBs accepted yet. Please annotate at least one FB.');
+                return;
+            }
+
+            if (!confirm(`Save ${acceptedFbs.length} FB(s) and move to next SERP?`)) {
+                return;
+            }
+
+            isProcessing = true;
+
+            // Prepare HTML for storage
+            const iframe = document.getElementById('serp-iframe');
+            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+            const htmlDoc = iframeDoc.cloneNode(true);
+
+            // Convert "fb-accepted" to "fb" for storage
+            htmlDoc.querySelectorAll('.fb-accepted').forEach(el => {
+                el.classList.remove('fb-accepted');
+                el.classList.add('fb');
+                // Keep data-fb-index and data-fb-category (persisted in saved HTML)
+                // Remove transient data attributes
+                delete el.dataset.fbXpath;
+            });
+
+            const htmlString = htmlDoc.documentElement.outerHTML;
+
+            // Show saving state
+            const saveBtn = document.getElementById('save-btn');
+            const originalText = saveBtn.textContent;
+            saveBtn.textContent = '💾 Saving...';
+            saveBtn.disabled = true;
+
+            try {
+                // Send to backend
+                const response = await fetch(`${API_BASE}/save-annotation/${currentSerpId}`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        html: htmlString,
+                        fb_num: acceptedFbs.length,
+                        fbs: acceptedFbs
+                    })
+                });
+
+                // Check HTTP status first
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+
+                if (result.success) {
+                    console.log('✅ Saved successfully!');
+                    console.log(`   Saved ${acceptedFbs.length} FBs to ${currentSerpId}`);
+
+                    // Small delay to ensure backend processing completes
+                    await new Promise(resolve => setTimeout(resolve, 300));
+
+                    // Load next SERP
+                    loadSerp(currentIndex + 1);
+                    isProcessing = false;
+
+                } else {
+                    throw new Error(result.message || 'Save failed');
+                }
+
+            } catch (error) {
+                isProcessing = false;
+                console.error('Save error:', error);
+                alert('Error saving annotation: ' + error.message);
+                saveBtn.textContent = originalText;
+                saveBtn.disabled = false;
+            }
+        }
+
+        function clearCache() {
+            localStorage.clear();
+            alert("Cache cleared");
+        }
+
+        // Initialize on page load
+        init();
+    </script>
+</body>
+</html>

@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>GT Editor</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; display: flex; flex-direction: column; height: 100vh; }
+        .header { background: #333; color: #fff; padding: 10px 16px; font-size: 14px; display: flex; align-items: center; gap: 16px; }
+        .header .label { font-weight: bold; }
+        .legend { display: flex; gap: 12px; font-size: 12px; }
+        .legend span { display: flex; align-items: center; gap: 4px; }
+        .legend .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+
+        .toolbar { background: #e3f2fd; padding: 8px 16px; display: flex; align-items: center; gap: 10px; border-bottom: 2px solid #90caf9; font-size: 13px; flex-wrap: wrap; }
+        .toolbar button { padding: 5px 14px; border: 1px solid #999; border-radius: 4px; cursor: pointer; font-size: 12px; background: #fff; }
+        .toolbar button:hover { background: #e0e0e0; }
+        .toolbar button:disabled { opacity: 0.4; cursor: default; }
+        .toolbar select { padding: 4px 8px; font-size: 12px; border-radius: 4px; border: 1px solid #999; }
+        .toolbar input[type="text"] { padding: 4px 8px; font-size: 12px; border-radius: 4px; border: 1px solid #999; font-family: monospace; }
+        .toolbar .status { margin-left: auto; font-style: italic; color: #555; }
+        .toolbar .save-btn { background: #4caf50; color: #fff; border-color: #388e3c; font-weight: bold; }
+        .toolbar .save-btn:hover { background: #388e3c; }
+        .toolbar .save-btn:disabled { background: #a5d6a7; border-color: #a5d6a7; }
+        .toolbar .remove-btn { background: #ef5350; color: #fff; border-color: #c62828; }
+        .toolbar .remove-btn:hover { background: #c62828; }
+        .toolbar .add-btn { background: #43a047; color: #fff; border-color: #2e7d32; }
+        .toolbar .add-btn:hover { background: #2e7d32; }
+        .sep { color: #90caf9; font-size: 16px; }
+
+        .problem-panel { background: #fafafa; border-bottom: 2px solid #ddd; max-height: 180px; overflow-y: auto; font-size: 12px; }
+        .problem-row { display: flex; align-items: center; gap: 8px; padding: 5px 16px; border-bottom: 1px solid #eee; }
+        .problem-row:hover { background: #f0f0f0; }
+        .problem-row .status-badge { padding: 2px 8px; border-radius: 3px; color: #fff; font-weight: bold; font-size: 11px; min-width: 80px; text-align: center; }
+        .problem-row .category { font-family: monospace; min-width: 180px; }
+        .problem-row button { padding: 3px 10px; border: 1px solid #999; border-radius: 3px; cursor: pointer; font-size: 11px; background: #fff; }
+        .problem-row button:hover { background: #e0e0e0; }
+        .problem-row button.accept-gt { background: #e8f5e9; border-color: #4caf50; color: #2e7d32; }
+        .problem-row button.accept-parsed { background: #fff3e0; border-color: #ff9800; color: #e65100; }
+        .problem-row button.accept-extra { background: #e3f2fd; border-color: #1976d2; color: #1565c0; }
+        .problem-row button.test-btn { background: #f3e5f5; border-color: #7b1fa2; color: #7b1fa2; }
+        .problem-row input[type="text"] { padding: 3px 6px; font-size: 11px; font-family: monospace; border: 1px solid #999; border-radius: 3px; width: 280px; }
+        .problem-row .result { font-style: italic; color: #555; }
+        .problem-row.resolved { opacity: 0.4; text-decoration: line-through; }
+
+        .main { display: flex; flex: 1; overflow: hidden; }
+        .sidebar { width: 280px; background: #f5f5f5; border-right: 2px solid #ddd; overflow-y: auto; flex-shrink: 0; }
+        .sidebar-item { padding: 10px 12px; border-bottom: 1px solid #ddd; cursor: pointer; font-size: 12px; }
+        .sidebar-item:hover { background: #e8e8e8; }
+        .sidebar-item.active { background: #d0d0ff; border-left: 4px solid #333; }
+        .sidebar-item .serp-id { font-weight: bold; font-family: monospace; word-break: break-all; }
+        .sidebar-item .badges { margin-top: 4px; display: flex; gap: 4px; flex-wrap: wrap; }
+        .badge { padding: 2px 6px; border-radius: 3px; font-size: 10px; color: #fff; font-weight: bold; }
+        .content { flex: 1; display: flex; }
+        .pane { flex: 1; display: flex; flex-direction: column; }
+        .pane:first-child { border-right: 2px solid #666; }
+        .pane-label { padding: 6px 12px; font-size: 12px; font-weight: bold; border-bottom: 2px solid #ddd; }
+        .pane:first-child .pane-label { background: #e8f5e9; color: #2e7d32; }
+        .pane:last-child .pane-label { background: #fff3e0; color: #e65100; }
+        iframe { flex: 1; border: none; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <span class="label">GT Editor: {{LABEL}}</span>
+        <div class="legend">
+            <span><span class="dot" style="background:#4caf50"></span>Matched</span>
+            <span><span class="dot" style="background:#e53935"></span>Mismatched</span>
+            <span><span class="dot" style="background:#7b1fa2"></span>Missing</span>
+            <span><span class="dot" style="background:#ff9800"></span>Extra</span>
+            <span><span class="dot" style="background:#795548"></span>Extraction Failed</span>
+        </div>
+    </div>
+    <div class="toolbar" id="toolbar">
+        <strong>Manual Edit:</strong>
+        <label>Category:</label>
+        <select id="category-select" disabled></select>
+        <button id="remove-btn" class="remove-btn" disabled onclick="removeSelected()">Remove</button>
+        <span class="sep">|</span>
+        <strong>Add:</strong>
+        <input type="text" id="add-xpath" placeholder="Paste XPath (DevTools → Copy XPath)" size="45" />
+        <select id="add-category-select"></select>
+        <button class="add-btn" onclick="addByXPath()">Add</button>
+        <span class="sep">|</span>
+        <button id="save-btn" class="save-btn" disabled onclick="saveChanges()">Save Manual Edits</button>
+        <span class="status" id="status-text"></span>
+    </div>
+    <div class="problem-panel" id="problem-panel"></div>
+    <div class="main">
+        <div class="sidebar" id="sidebar"></div>
+        <div class="content">
+            <div class="pane">
+                <div class="pane-label">Ground-Truth (left) — click fb element to edit</div>
+                <iframe id="gt-frame"></iframe>
+            </div>
+            <div class="pane">
+                <div class="pane-label">Parsed Extraction (right)</div>
+                <iframe id="ext-frame"></iframe>
+            </div>
+        </div>
+    </div>
+    <script>
+        var entries = {{ENTRIES_JSON}};
+        var taxonomy = {{TAXONOMY_JSON}};
+        var badgeColors = {matched:'#4caf50', mismatched:'#e53935', missing:'#7b1fa2', extra:'#ff9800', extraction_failed:'#795548'};
+
+        var currentIndex = -1;
+        var selectedEl = null;
+        var pendingChanges = {};
+
+        var catSelect = document.getElementById('category-select');
+        var addCatSelect = document.getElementById('add-category-select');
+        taxonomy.forEach(function(cat) {
+            var opt = document.createElement('option');
+            opt.value = cat.id;
+            opt.textContent = cat.label;
+            catSelect.appendChild(opt);
+            addCatSelect.appendChild(opt.cloneNode(true));
+        });
+
+        catSelect.addEventListener('change', function() {
+            if (!selectedEl) return;
+            var cat = catSelect.value;
+            var fbIndex = selectedEl.getAttribute('data-fb-index');
+            if (fbIndex) {
+                selectedEl.setAttribute('data-fb-category', cat);
+                updateMarkerLabel(selectedEl, cat);
+                pendingChanges[fbIndex] = {fb_index: fbIndex, action: 'update', category: cat};
+                selectedEl.style.outline = '3px dotted #ff9800';
+            }
+            updateStatus();
+        });
+
+        // Sidebar
+        var sidebar = document.getElementById('sidebar');
+        entries.forEach(function(e, i) {
+            var div = document.createElement('div');
+            div.className = 'sidebar-item';
+            div.dataset.index = i;
+            var badges = Object.entries(e.statuses).filter(function(kv) { return kv[0] !== 'matched'; }).map(function(kv) {
+                return '<span class="badge" style="background:' + (badgeColors[kv[0]]||'#999') + '">' + kv[1] + ' ' + kv[0] + '</span>';
+            }).join('');
+            div.innerHTML = '<div class="serp-id">' + e.serp_id + '</div><div class="badges">' + badges + '</div>';
+            div.onclick = function() { selectEntry(i); };
+            sidebar.appendChild(div);
+        });
+
+        function selectEntry(i) {
+            if (currentIndex >= 0 && Object.keys(pendingChanges).length > 0) {
+                if (!confirm('You have unsaved manual edits. Switch anyway?')) return;
+            }
+            pendingChanges = {};
+            selectedEl = null;
+            currentIndex = i;
+            document.querySelectorAll('.sidebar-item').forEach(function(el) { el.classList.remove('active'); });
+            document.querySelector('[data-index="' + i + '"]').classList.add('active');
+
+            reloadIframes();
+            loadProblems();
+
+            document.getElementById('category-select').disabled = true;
+            document.getElementById('remove-btn').disabled = true;
+            document.getElementById('add-xpath').value = '';
+            updateStatus();
+        }
+
+        function reloadIframes() {
+            var serpId = entries[currentIndex].serp_id;
+            document.getElementById('gt-frame').src = '/gt/' + serpId;
+            document.getElementById('ext-frame').src = '/ext/' + serpId;
+            document.getElementById('gt-frame').onload = function() { bindGtClickHandlers(); };
+        }
+
+        function loadProblems() {
+            var serpId = entries[currentIndex].serp_id;
+            fetch('/problems/' + serpId)
+                .then(function(r) { return r.json(); })
+                .then(function(problems) {
+                    renderProblems(problems);
+                    updateSidebarBadges(currentIndex, problems);
+                });
+        }
+
+        function updateSidebarBadges(idx, problems) {
+            var counts = {};
+            problems.forEach(function(p) {
+                counts[p.status] = (counts[p.status] || 0) + 1;
+            });
+            var item = document.querySelector('[data-index="' + idx + '"]');
+            if (!item) return;
+            var badgesHtml = Object.entries(counts).filter(function(kv) { return kv[0] !== 'matched'; }).map(function(kv) {
+                return '<span class="badge" style="background:' + (badgeColors[kv[0]]||'#999') + '">' + kv[1] + ' ' + kv[0] + '</span>';
+            }).join('');
+            if (problems.length === 0) {
+                badgesHtml = '<span class="badge" style="background:#4caf50">all matched</span>';
+            }
+            item.querySelector('.badges').innerHTML = badgesHtml;
+        }
+
+        function renderProblems(problems) {
+            var panel = document.getElementById('problem-panel');
+            if (problems.length === 0) {
+                panel.innerHTML = '<div style="padding:8px 16px;color:#4caf50;font-weight:bold;">All matched!</div>';
+                return;
+            }
+            var html = '';
+            problems.forEach(function(p, i) {
+                var color = badgeColors[p.status] || '#999';
+                var actions = '';
+
+                if (p.status === 'mismatched') {
+                    actions = '<button class="accept-gt" onclick="acceptGt(' + i + ')">Accept GT</button>'
+                            + '<button class="accept-parsed" onclick="acceptParsed(' + i + ')">Accept Parsed</button>';
+                } else if (p.status === 'missing') {
+                    actions = '<input type="text" id="xpath-missing-' + i + '" placeholder="XPath to test..." />'
+                            + '<button class="test-btn" onclick="testXPath(' + i + ')">Test</button>'
+                            + '<span class="result" id="result-' + i + '"></span>';
+                } else if (p.status === 'extra') {
+                    actions = '<button class="accept-extra" onclick="acceptExtra(' + i + ')">Accept into GT</button>';
+                } else if (p.status === 'extraction_failed') {
+                    actions = '<span style="color:#795548">No content extracted</span>';
+                }
+
+                html += '<div class="problem-row" id="problem-' + i + '">'
+                      + '<span class="status-badge" style="background:' + color + '">' + p.status.toUpperCase() + '</span>'
+                      + '<span class="category">' + p.category + '</span>'
+                      + (p.xpath ? '<span style="color:#999;font-size:10px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + p.xpath + '">xpath: ' + p.xpath + '</span>' : '')
+                      + '<span style="flex:1"></span>'
+                      + actions
+                      + '</div>';
+            });
+            panel.innerHTML = html;
+            panel._problems = problems;
+        }
+
+        function acceptGt(idx) {
+            var row = document.getElementById('problem-' + idx);
+            row.classList.add('resolved');
+            row.innerHTML = '<span class="status-badge" style="background:#4caf50">ACCEPTED GT</span>'
+                          + '<span class="category">' + document.getElementById('problem-panel')._problems[idx].category + '</span>'
+                          + '<span style="color:#4caf50;font-style:italic">No GT change needed — parser XPath needs fixing</span>';
+        }
+
+        function acceptParsed(idx) {
+            var panel = document.getElementById('problem-panel');
+            var p = panel._problems[idx];
+            var serpId = entries[currentIndex].serp_id;
+
+            var row = document.getElementById('problem-' + idx);
+            row.style.opacity = '0.6';
+
+            fetch('/accept-parsed/' + serpId, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({category: p.category, parser_xpath: p.xpath}),
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    reloadIframes();
+                    loadProblems();
+                } else {
+                    alert('Error: ' + data.message);
+                    row.style.opacity = '1';
+                }
+            });
+        }
+
+        function acceptExtra(idx) {
+            var panel = document.getElementById('problem-panel');
+            var p = panel._problems[idx];
+            var serpId = entries[currentIndex].serp_id;
+
+            var row = document.getElementById('problem-' + idx);
+            row.style.opacity = '0.6';
+
+            fetch('/accept-extra/' + serpId, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({category: p.category, parser_xpath: p.xpath}),
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    reloadIframes();
+                    loadProblems();
+                } else {
+                    alert('Error: ' + data.message);
+                    row.style.opacity = '1';
+                }
+            });
+        }
+
+        function testXPath(idx) {
+            var panel = document.getElementById('problem-panel');
+            var p = panel._problems[idx];
+            var serpId = entries[currentIndex].serp_id;
+            var xpathInput = document.getElementById('xpath-missing-' + idx);
+            var xpath = xpathInput.value.trim();
+            var resultSpan = document.getElementById('result-' + idx);
+
+            if (!xpath) {
+                resultSpan.textContent = 'Paste an XPath first';
+                resultSpan.style.color = '#e53935';
+                return;
+            }
+
+            resultSpan.textContent = 'Testing...';
+            resultSpan.style.color = '#555';
+
+            fetch('/test-xpath/' + serpId, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({xpath: xpath, category: p.category}),
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.matched) {
+                    resultSpan.textContent = 'MATCHED!';
+                    resultSpan.style.color = '#4caf50';
+                    reloadIframes();
+                    // Update problem row to show resolved
+                    var row = document.getElementById('problem-' + idx);
+                    row.classList.add('resolved');
+                    setTimeout(loadProblems, 500);
+                } else {
+                    resultSpan.textContent = data.message;
+                    resultSpan.style.color = '#e53935';
+                }
+            });
+        }
+
+        // --- Manual edit: click fb elements ---
+
+        function clearSelection() {
+            if (selectedEl) {
+                selectedEl.style.outline = '';
+                var idx = selectedEl.getAttribute('data-fb-index');
+                if (idx && pendingChanges[idx]) {
+                    selectedEl.style.outline = '3px dotted #ff9800';
+                }
+            }
+            selectedEl = null;
+            document.getElementById('category-select').disabled = true;
+            document.getElementById('remove-btn').disabled = true;
+        }
+
+        function bindGtClickHandlers() {
+            var gtFrame = document.getElementById('gt-frame');
+            var doc;
+            try { doc = gtFrame.contentDocument; } catch(e) { return; }
+            if (!doc) return;
+
+            var fbEls = doc.querySelectorAll('[data-fb-category]');
+            fbEls.forEach(function(el) {
+                el.style.cursor = 'pointer';
+                el.onclick = function(ev) {
+                    ev.stopPropagation();
+                    clearSelection();
+                    selectedEl = el;
+                    el.style.outline = '3px dashed #1976d2';
+                    var cat = el.getAttribute('data-fb-category');
+                    document.getElementById('category-select').disabled = false;
+                    document.getElementById('category-select').value = cat;
+                    document.getElementById('remove-btn').disabled = false;
+                    updateStatus();
+                };
+            });
+        }
+
+        function addByXPath() {
+            var xpathInput = document.getElementById('add-xpath');
+            var xpath = xpathInput.value.trim();
+            if (!xpath) { alert('Paste an XPath from DevTools (right-click → Copy → Copy XPath)'); return; }
+
+            var gtFrame = document.getElementById('gt-frame');
+            var doc;
+            try { doc = gtFrame.contentDocument; } catch(e) { alert('Cannot access GT iframe'); return; }
+
+            var result;
+            try { result = doc.evaluate(xpath, doc, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null); }
+            catch(e) { alert('Invalid XPath: ' + e.message); return; }
+
+            var el = result.singleNodeValue;
+            if (!el) { alert('XPath matched no elements.'); return; }
+
+            var category = document.getElementById('add-category-select').value;
+            var existing = doc.querySelectorAll('[data-fb-index]');
+            var maxIdx = 0;
+            existing.forEach(function(e) { var n = parseInt(e.getAttribute('data-fb-index'), 10); if (n > maxIdx) maxIdx = n; });
+            var idx = 'new_' + (maxIdx + 100);
+
+            el.setAttribute('data-fb-index', idx);
+            var cls = el.getAttribute('class') || '';
+            if (cls.indexOf('fb') === -1) el.setAttribute('class', (cls + ' fb').trim());
+            el.setAttribute('data-fb-category', category);
+
+            var marker = doc.createElement('div');
+            marker.className = 'edit-marker';
+            marker.style.cssText = 'background:#43a047!important; color:white!important; padding:4px 10px!important; margin:0 0 5px 0!important; font-size:12px!important; font-weight:bold!important;';
+            marker.textContent = '[NEW] ' + category;
+            el.insertBefore(marker, el.firstChild);
+            el.style.outline = '3px dotted #ff9800';
+            el.scrollIntoView({behavior: 'smooth', block: 'center'});
+
+            pendingChanges[idx] = {action: 'add', category: category, xpath: xpath};
+            xpathInput.value = '';
+            updateStatus();
+        }
+
+        function updateMarkerLabel(el, newCategory) {
+            var marker = el.querySelector('div[style*="font-size:12px"]');
+            if (marker) {
+                var text = marker.textContent;
+                var bracketEnd = text.indexOf(']');
+                if (bracketEnd >= 0) marker.textContent = text.substring(0, bracketEnd + 2) + newCategory;
+            }
+        }
+
+        function removeSelected() {
+            if (!selectedEl) return;
+            var fbIndex = selectedEl.getAttribute('data-fb-index');
+            if (!fbIndex) return;
+            pendingChanges[fbIndex] = {fb_index: fbIndex, action: 'remove'};
+            selectedEl.style.outline = '3px dotted #ef5350';
+            selectedEl.style.opacity = '0.4';
+            var marker = selectedEl.querySelector('div[style*="font-size:12px"]');
+            if (marker) { marker.style.background = '#ef5350'; marker.textContent = '[REMOVED]'; }
+            clearSelection();
+            updateStatus();
+        }
+
+        function updateStatus() {
+            var count = Object.keys(pendingChanges).length;
+            var statusEl = document.getElementById('status-text');
+            var saveBtn = document.getElementById('save-btn');
+            if (count === 0) {
+                statusEl.textContent = '';
+                saveBtn.disabled = true;
+            } else {
+                statusEl.textContent = count + ' unsaved edit' + (count > 1 ? 's' : '');
+                saveBtn.disabled = false;
+            }
+        }
+
+        function saveChanges() {
+            if (currentIndex < 0) return;
+            var serpId = entries[currentIndex].serp_id;
+            var changes = Object.values(pendingChanges);
+            if (changes.length === 0) return;
+
+            document.getElementById('save-btn').disabled = true;
+            document.getElementById('status-text').textContent = 'Saving...';
+
+            fetch('/save-gt/' + serpId, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({changes: changes}),
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    pendingChanges = {};
+                    selectedEl = null;
+                    document.getElementById('status-text').textContent = 'Saved!';
+                    reloadIframes();
+                    loadProblems();
+                } else {
+                    document.getElementById('status-text').textContent = 'Error: ' + data.message;
+                    document.getElementById('save-btn').disabled = false;
+                }
+            });
+        }
+
+        if (entries.length) selectEntry(0);
+    </script>
+</body>
+</html>
