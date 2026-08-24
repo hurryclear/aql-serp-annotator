@@ -1,0 +1,24 @@
+[build-system]
+requires = ["uv_build >= 0.12.1, <0.13.0"]
+build-backend = "uv_build"
+
+[project]
+name = "aql-serp-annotator"
+version = "0.0.1"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn>=0.52.2",
+    "elasticsearch~=7.17",
+    "elasticsearch-dsl~=7.4",
+    "elasticsearch-pydantic~=1.1",
+    "warc-s3~=1.0",
+    "pydantic-settings~=2.12",
+    "python-dotenv~=1.1",
+    "sqlalchemy~=2.0",
+]
+
+[project.optional-dependencies]
+
+[tool.uv]
+package = false
