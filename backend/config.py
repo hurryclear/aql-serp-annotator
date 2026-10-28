@@ -95,12 +95,12 @@ class PersistenceConfig(BaseSettings):
         return engine
 
 
-# the worklist of SERPs to annotate; tracked in git under resources/ so every
-# annotator works from the same list (unlike data/, which is local and ignored)
-class ManifestConfig(BaseSettings):
+# the candidate SERPs that carts are drawn from; tracked in git under resources/ so
+# every annotator works from the same set (unlike data/, which is local and ignored)
+class CandidateSerpsConfig(BaseSettings):
     model_config = SettingsConfigDict(frozen=True)
     dir_path: Path = Path(__file__).resolve().parent / "resources"
-    file_name: str = "serps_manifest.jsonl"
+    file_name: str = "candidate_serps.jsonl"
 
 
 class Config(BaseSettings):
@@ -119,11 +119,13 @@ class Config(BaseSettings):
     ] = EsConfig()
     s3: S3Config = S3Config()
     persistence: PersistenceConfig = PersistenceConfig()
-    manifest: ManifestConfig = ManifestConfig()
+    # named without "_" because env vars split at the first "_" (env_nested_max_split=1):
+    # CANDIDATES_FILE_NAME -> candidates.file_name
+    candidates: CandidateSerpsConfig = CandidateSerpsConfig()
 
     @cached_property
-    def manifest_path(self) -> Path:
-        return self.manifest.dir_path / self.manifest.file_name
+    def candidate_serps_path(self) -> Path:
+        return self.candidates.dir_path / self.candidates.file_name
 
     # http: HttpConfig = HttpConfig()
     # warc_cache: WarcCacheConfig = WarcCacheConfig()

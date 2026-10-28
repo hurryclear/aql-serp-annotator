@@ -1,4 +1,4 @@
-"""human-friendly names (as entered on the landing page) -> canonical values used in the manifest and Cart records"""
+"""human-friendly names (as entered on the landing page) -> canonical values used in the candidate SERPs file and Cart records"""
 
 PROVIDERS: dict[str, str] = {
     "google": "f205fc44-d918-4b79-9a7f-c1373a6ff9f2",

@@ -1,8 +1,8 @@
-"""create annotation carts: a random batch of not-yet-annotated SERPs from the manifest"""
+"""create annotation carts: a random batch of not-yet-annotated candidate SERPs"""
 import random
 
 from schemas import CartInput, CartOutput
-from manifest import search_manifest
+from candidate_serps import search_candidate_serps
 from mapping import PROVIDERS, LANGUAGES
 from persistence.database import SessionLocal
 from persistence.models import Annotation, Cart
@@ -14,7 +14,7 @@ def create_cart(cart_input: CartInput) -> CartOutput:
     if provider is None or language is None:
         return CartOutput(id=None, serp_ids=[], total=0)
 
-    filtered_serp_ids = search_manifest(provider, language, cart_input.year)
+    filtered_serp_ids = search_candidate_serps(provider, language, cart_input.year)
     with SessionLocal() as session:
         annotated_serp_rows = (
             session.query(Annotation.serp_id)
