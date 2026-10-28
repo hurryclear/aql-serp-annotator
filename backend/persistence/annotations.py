@@ -49,6 +49,9 @@ def save_annotation(
                     content=input_feature.content,
                 )
                 session.add(feature)
+                # without relationship() SQLAlchemy doesn't know Feature must be
+                # inserted before the AnnotatedFeature pointing at it, so do it now
+                session.flush()
 
             session.add(
                 AnnotatedFeature(
