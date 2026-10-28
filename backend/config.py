@@ -1,9 +1,9 @@
 from functools import cached_property
 from dotenv import find_dotenv
-from typing import Annotated
+from typing import Annotated, Any, Literal
 from pathlib import Path
 from elasticsearch import Elasticsearch
-from pydantic import Field, AliasChoices
+from pydantic import Field, AliasChoices, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 # from warc_cache import WarcCacheStore
 from warc_s3 import WarcS3Store
@@ -68,10 +68,20 @@ class S3Config(BaseSettings):
     #     return WarcS3StoreWrapper(self.warc_s3_store)
 
 
+DATA_ROOT = Path(__file__).resolve().parent.parent / "data"
+
+# the only things that differ between environments (ADR 0006); code and AQL access
+# are the same. Each value is a default: an explicit env var or .env entry still wins
+ENVIRONMENTS: dict[str, dict[str, Any]] = {
+    "test": {"data_path": DATA_ROOT / "test", "candidates_file": "candidate_serps_test.jsonl"},
+    "prod": {"data_path": DATA_ROOT / "prod", "candidates_file": "candidate_serps.jsonl"},
+}
+
+
 # local data store
 class PersistenceConfig(BaseSettings):
     model_config = SettingsConfigDict(frozen=True)
-    data_path: Path = Path(__file__).resolve().parent.parent / "data"
+    data_path: Path = ENVIRONMENTS["test"]["data_path"]
 
     @cached_property
     def serp_path(self) -> Path:
@@ -100,7 +110,7 @@ class PersistenceConfig(BaseSettings):
 class CandidateSerpsConfig(BaseSettings):
     model_config = SettingsConfigDict(frozen=True)
     dir_path: Path = Path(__file__).resolve().parent / "resources"
-    file_name: str = "candidate_serps.jsonl"
+    file_name: str = ENVIRONMENTS["test"]["candidates_file"]
 
 
 class Config(BaseSettings):
@@ -110,6 +120,9 @@ class Config(BaseSettings):
         env_nested_delimiter="_",
         env_nested_max_split=1,
     )
+
+    # test unless asked otherwise, so real annotations are only touched on purpose
+    app_env: Literal["test", "prod"] = "test"
 
     es: Annotated[
         EsConfig,
@@ -122,6 +135,25 @@ class Config(BaseSettings):
     # named without "_" because env vars split at the first "_" (env_nested_max_split=1):
     # CANDIDATES_FILE_NAME -> candidates.file_name
     candidates: CandidateSerpsConfig = CandidateSerpsConfig()
+
+    # runs on the raw settings before validation: fill in the chosen environment's
+    # defaults for anything the env vars / .env didn't set explicitly
+    @model_validator(mode="before")
+    @classmethod
+    def apply_environment_defaults(cls, data: Any) -> Any:
+        if not isinstance(data, dict):
+            return data
+        defaults = ENVIRONMENTS.get(data.get("app_env", "test"))
+        if defaults is None:  # unknown name: leave it to the Literal check to report
+            return data
+        data = dict(data)
+        for section, key, value in (
+            ("persistence", "data_path", defaults["data_path"]),
+            ("candidates", "file_name", defaults["candidates_file"]),
+        ):
+            if isinstance(data.get(section, {}), dict):
+                data[section] = {key: value, **data.get(section, {})}
+        return data
 
     @cached_property
     def candidate_serps_path(self) -> Path:

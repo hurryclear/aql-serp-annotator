@@ -1,3 +1,4 @@
+import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
@@ -10,7 +11,11 @@ from app.routers.serps import router as serps_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-
+    # uvicorn's own logger, so this line shows up next to "Application startup complete"
+    logging.getLogger("uvicorn.error").info(
+        "APP_ENV=%s · data: %s · candidate SERPs: %s",
+        config.app_env, config.persistence.data_path, config.candidates.file_name,
+    )
     Base.metadata.create_all(config.persistence.sqlite_engine)
     yield
 
