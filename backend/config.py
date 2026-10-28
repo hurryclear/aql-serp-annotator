@@ -95,8 +95,11 @@ class PersistenceConfig(BaseSettings):
         return engine
 
 
+# the worklist of SERPs to annotate; tracked in git under resources/ so every
+# annotator works from the same list (unlike data/, which is local and ignored)
 class ManifestConfig(BaseSettings):
     model_config = SettingsConfigDict(frozen=True)
+    dir_path: Path = Path(__file__).resolve().parent / "resources"
     file_name: str = "serps_manifest.jsonl"
 
 
@@ -120,7 +123,7 @@ class Config(BaseSettings):
 
     @cached_property
     def manifest_path(self) -> Path:
-        return self.persistence.data_path / self.manifest.file_name
+        return self.manifest.dir_path / self.manifest.file_name
 
     # http: HttpConfig = HttpConfig()
     # warc_cache: WarcCacheConfig = WarcCacheConfig()

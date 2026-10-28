@@ -43,6 +43,7 @@ Behavior:
 ## Consequences
 
 - `config.py` gains a new field for the manifest file's path (same `.env`-driven, `cached_property` style as `PersistenceConfig`'s existing fields).
+- Update (2026-10-28): the manifest is tracked in git under `backend/resources/` (`MANIFEST_DIR_PATH` / `MANIFEST_FILE_NAME` override it), not in the gitignored `data/` folder, so every annotator works from the same list. Longer term, marking the worklist directly in Elasticsearch was floated; not decided.
 - No new dependency: JSONL parsing uses the standard library `json` module, one line at a time.
 - Closing the browser tab mid-session loses track of which SERPs in that cart's batch remain unannotated — the server has no record of the offered set, only of completed `Annotation`s. Acceptable today; revisit (e.g., a join table recording the offered batch) if resuming an unfinished cart becomes a real need.
 - `GET /serps` (ADR 0002) is no longer this workflow's route; it stays reserved, undefined, alongside `/features`.
