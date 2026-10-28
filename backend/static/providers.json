@@ -1,0 +1,102 @@
+{
+    "providers": [
+        {
+            "name": "google",
+            "id": "f205fc44-d918-4b79-9a7f-c1373a6ff9f2",
+            "priority": 1025.0,
+            "language": "Global / all languages",
+            "market": "Worldwide"
+        },
+        {
+            "name": "baidu",
+            "id": "2cdfe387-b987-40f9-8a70-e50b378f71c1",
+            "priority": 1020.0,
+            "language": "Chinese",
+            "market": "Mainland China"
+        },
+        {
+            "name": "yahoo",
+            "id": "6c8f6e76-13e9-436b-8ea3-1645bce0032c",
+            "priority": 1015.0,
+            "language": "English, Japanese",
+            "market": "United States, Japan"
+        },
+        {
+            "name": "360",
+            "id": "ce3da23a-fa5f-4d38-b3cd-81cbd6fed53a",
+            "priority": 1012.0,
+            "language": "Chinese",
+            "market": "Mainland China"
+        },
+        {
+            "name": "bing",
+            "id": "a0d3e9d1-6b95-46a4-b4d7-3f00de99ae7d",
+            "priority": 1004.0,
+            "language": "English / multilingual",
+            "market": "Worldwide"
+        },
+        {
+            "name": "naver",
+            "id": "273bf1e0-e2ec-4e3d-8843-51d8cb82abc1",
+            "priority": 999.0,
+            "language": "Korean",
+            "market": "South Korea"
+        },
+        {
+            "name": "yandex",
+            "id": "6d1b6758-45fe-42e2-9f60-ec38558714bc",
+            "priority": 997.0,
+            "language": "Russian",
+            "market": "Russia, CIS"
+        },
+        {
+            "name": "sogou",
+            "id": "565cd43a-5921-4214-b7e5-0bcd7efb42fa",
+            "priority": 980.0,
+            "language": "Chinese",
+            "market": "Mainland China"
+        },
+        {
+            "name": "daum",
+            "id": "10b57fbe-76cc-402f-b7ca-308b8cf3d300",
+            "priority": 960.0,
+            "language": "Korean",
+            "market": "South Korea"
+        },
+        {
+            "name": "ask.com",
+            "id": "24fb5290-44aa-40e4-8272-0126a74d86cd",
+            "priority": 937.0,
+            "language": "English",
+            "market": "United States"
+        },
+        {
+            "name": "rambler",
+            "id": "5498178c-319e-4ccd-af98-e4c61476bea7",
+            "priority": 928.0,
+            "language": "Russian",
+            "market": "Russia"
+        },
+        {
+            "name": "seznam",
+            "id": "22eba7be-a91c-4b21-80d3-0e837126f203",
+            "score": 917.0,
+            "language": "Czech",
+            "market": "Czech Republic"
+        },
+        {
+            "name": "ecosia",
+            "id": "7a88141f-90b9-49a5-9083-9a922038c16c",
+            "score": 915.0,
+            "language": "English, German / multilingual",
+            "market": "Worldwide, Germany-based"
+        },
+        {
+            "name": "goo",
+            "id": "183282c3-ff26-429b-ae25-f6dbfe90e94e",
+            "score": 913.0,
+            "language": "Japanese",
+            "market": "Japan"
+        }
+    ]
+}

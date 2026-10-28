@@ -30,3 +30,9 @@ class CartOutput():
     id: UUID | None
     serp_ids: list[UUID]
     total: int
+
+
+@dataclass
+class AnnotationInput():
+    cart_id: UUID
+    features: list[AnnotatedFeatureInput]

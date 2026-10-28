@@ -7,7 +7,7 @@ from pydantic import Field, AliasChoices
 from pydantic_settings import BaseSettings, SettingsConfigDict
 # from warc_cache import WarcCacheStore
 from warc_s3 import WarcS3Store
-from sqlalchemy import create_engine, Engine
+from sqlalchemy import create_engine, event, Engine
 
 
 class EsConfig(BaseSettings):
@@ -86,9 +86,13 @@ class PersistenceConfig(BaseSettings):
 
     @cached_property
     def sqlite_engine(self) -> Engine:
-        return create_engine(
-            url=f"sqlite:///{self.sqlite_path}"
-        )
+        engine = create_engine(url=f"sqlite:///{self.sqlite_path}")
+        @event.listens_for(engine, "connect")
+        def enable_foreign_keys(dbapi_connection, connection_record):
+            cursor = dbapi_connection.cursor()
+            cursor.execute("PRAGMA foreign_keys=ON")
+            cursor.close()
+        return engine
 
 
 class ManifestConfig(BaseSettings):

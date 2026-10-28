@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 
 from persistence import Base, config
 from app.routers.carts import router as carts_router
+from app.routers.serps import router as serps_router
 
 
 @asynccontextmanager
@@ -20,3 +21,4 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(carts_router)
+app.include_router(serps_router)

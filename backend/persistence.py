@@ -56,7 +56,7 @@ class ParsedFeature(Base):
     __tablename__ = "parsed_feature"
     feature_id: Mapped[UUID] = mapped_column(ForeignKey("feature.id"), primary_key=True)
     serp_id: Mapped[UUID]
-    feature_parser: Mapped[UUID] = mapped_column(ForeignKey("feature_parser.id"))
+    feature_parser: Mapped[UUID] = mapped_column(ForeignKey("feature_parser.id"), primary_key=True)
     answer_text: Mapped[str | None]
     answer_source_link: Mapped[str | None]
 
@@ -111,22 +111,32 @@ def create_cart(cart_input: CartInput) -> CartOutput:
         return CartOutput(id=cart.id, serp_ids=serp_ids, total=len(serp_ids))
 
 
-
 def save_serp_html(serp_id: UUID, html: str) -> None:
     serp_path = config.persistence.serp_path / f"{serp_id}.html"
-    serp_path.write_text(html)
+    serp_path.write_text(html, encoding="utf-8")
 
 
-def get_serp_html(serp_id: UUID) -> str:
+def get_serp_html(serp_id: UUID) -> str | None:
     serp_path = config.persistence.serp_path / f"{serp_id}.html"
-    return serp_path.read_text()
+    if not serp_path.exists():
+        return None
+    return serp_path.read_text(encoding="utf-8")
 
 
 def save_annotation(
     serp_id: UUID,
+    cart_id: UUID,
     input_features: list[AnnotatedFeatureInput],
     overwrite: bool = False,
 ) -> None:
+    """Record a human annotation of one SERP.
+
+    Each input feature is stored once as a Feature (deduped by a hash of
+    type+content) and linked to this SERP via an AnnotatedFeature carrying
+    its xpath. A single Annotation row marks the SERP as done; if one
+    already exists, raises AnnotationExistsError unless overwrite=True, in
+    which case the SERP's prior feature links are replaced.
+    """
     with SessionLocal() as session:
         existing = session.get(Annotation, serp_id)
 
@@ -134,7 +144,7 @@ def save_annotation(
             raise AnnotationExistsError(f"{serp_id} is already annotated")
 
         if existing is None:
-            session.add(Annotation(serp_id=serp_id))
+            session.add(Annotation(serp_id=serp_id, cart_id=cart_id))
         else:
             existing.updated_at = datetime.now(UTC)
             session.query(AnnotatedFeature).filter_by(annotated_serp_id=serp_id).delete()
