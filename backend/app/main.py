@@ -2,7 +2,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
-from persistence import Base, config
+from config import config
+from persistence.models import Base
 from app.routers.carts import router as carts_router
 from app.routers.serps import router as serps_router
 

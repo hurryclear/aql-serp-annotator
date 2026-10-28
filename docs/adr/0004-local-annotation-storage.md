@@ -25,8 +25,8 @@ A feature block instance can come from two different sources, and a single `Feat
 
 - **Structured data → SQLite via SQLAlchemy.**
 - **SERP HTML → a file on disk per SERP** (e.g. `data/annotated_serps/{serp_id}.html`), not a database blob column — keeps the database small and the HTML directly greppable/diffable.
-- Both are accessed only through a repository module, `backend/persistence.py`, exposing `save_annotation`, `get_annotation`, `get_feature`, `save_serp_html`, `get_serp_html`. Routes call this module; they never open a SQLAlchemy session or a file directly.
-- `persistence.py` holds only storage mechanics: the SQLAlchemy models, `config`/`SessionLocal`, and the repository functions. It deliberately does **not** define the DTOs those functions accept/return, or any custom exceptions — those live in `backend/schemas.py` and `backend/exceptions.py` respectively, so that "what data looks like to the rest of the app" stays separate from "how it's stored."
+- Both are accessed only through a repository package, `backend/persistence/` (`models.py` tables, `database.py` session factory, and `carts.py`/`annotations.py`/`serp_store.py` operations), exposing `save_annotation`, `get_annotation`, `get_feature`, `save_serp_html`, `get_serp_html`. Routes call this package; they never open a SQLAlchemy session or a file directly.
+- `persistence/` holds only storage mechanics: the SQLAlchemy models, `SessionLocal`, and the repository functions. It deliberately does **not** define the DTOs those functions accept/return, or any custom exceptions — those live in `backend/schemas.py` and `backend/exceptions.py` respectively, so that "what data looks like to the rest of the app" stays separate from "how it's stored."
 - Storage location is configurable via `.env`, following the existing `EsConfig`/`S3Config` pattern in `backend/config.py`.
 - The snapshot directory (and the SQLite file) are gitignored — this is generated/derived data, not source.
 
@@ -48,7 +48,7 @@ NAMESPACE_FEATURE = uuid5(NAMESPACE_AQL_SERP_ANNOTATOR, "feature")
 NAMESPACE_FEATURE_PARSER = uuid5(NAMESPACE_AQL_SERP_ANNOTATOR, "feature_parser")
 ```
 
-- `Feature.id = uuid5(NAMESPACE_FEATURE, f"{serp_id}:{type}:{sha256(content)}")` — `serp_id` here is whichever SERP this instance is associated with (`AnnotatedFeature.annotated_serp_id` or `ParsedFeature.serp_id`), known by the caller at construction time in `persistence.py`, not stored on `Feature` itself. Re-saving identical content for the same SERP/type reproduces the same id; different content (or a second block of the same type) gets a distinct one.
+- `Feature.id = uuid5(NAMESPACE_FEATURE, f"{serp_id}:{type}:{sha256(content)}")` — `serp_id` here is whichever SERP this instance is associated with (`AnnotatedFeature.annotated_serp_id` or `ParsedFeature.serp_id`), known by the caller at construction time in `persistence/`, not stored on `Feature` itself. Re-saving identical content for the same SERP/type reproduces the same id; different content (or a second block of the same type) gets a distinct one.
 - `FeatureParser.id = uuid5(NAMESPACE_FEATURE_PARSER, f"{provider}:{feature_type}:{xpath}:{text_xpath}:{source_link_xpath}")` — the id is derived from the rule's actual content, so two different xpath definitions for the same `(provider, feature_type)` naturally get different ids and coexist as separate rows.
 - Content is hashed with `hashlib.sha256`, not Python's built-in `hash()` — the builtin is randomized per process (`PYTHONHASHSEED`) and would make these ids non-reproducible across restarts.
 
@@ -62,12 +62,12 @@ NAMESPACE_FEATURE_PARSER = uuid5(NAMESPACE_AQL_SERP_ANNOTATOR, "feature_parser")
 ## Consequences
 
 - New dependency: `sqlalchemy` (added, `~=2.0`).
-- `backend/orm.py` stays scoped to the AQL Elasticsearch mirror only, per ADR 0003. The new SQLAlchemy models live in `backend/persistence.py`, not `orm.py`. The in-progress `AnnotatedSerp(Serp)` stub that used to sit at the end of `backend/orm.py` conflated the two concerns and has been removed from there — the SERP-annotation-record class (now named `Annotation`) is a standalone class in `persistence.py`, not a subtype of the AQL `Serp` document.
+- `backend/aql/models.py` (formerly `orm.py`) stays scoped to the AQL Elasticsearch mirror only, per ADR 0003. The new SQLAlchemy models live in `backend/persistence/models.py`, not there. The in-progress `AnnotatedSerp(Serp)` stub that used to sit at the end of `backend/orm.py` conflated the two concerns and has been removed from there — the SERP-annotation-record class (now named `Annotation`) is a standalone class in `persistence/models.py`, not a subtype of the AQL `Serp` document.
 - `backend/namespaces.py` goes from an empty stub to holding the namespace hierarchy above.
-- Because the repository module is the only thing that knows storage is local-disk-based, moving storage later (Postgres instead of SQLite, snapshots stored somewhere other than local disk, or even Elasticsearch) only touches `persistence.py`'s internals and `.env` config — the SQLAlchemy models and callers stay the same. (Elasticsearch specifically was considered and set aside: it would add real operational overhead — a running server process, no embedded/zero-setup option like SQLite — for a single local annotator, and its document model doesn't map cleanly onto the relational structure here. The `persistence.py` boundary keeps that option open later without paying its cost now.)
+- Because the repository module is the only thing that knows storage is local-disk-based, moving storage later (Postgres instead of SQLite, snapshots stored somewhere other than local disk, or even Elasticsearch) only touches `persistence/`'s internals and `.env` config — the SQLAlchemy models and callers stay the same. (Elasticsearch specifically was considered and set aside: it would add real operational overhead — a running server process, no embedded/zero-setup option like SQLite — for a single local annotator, and its document model doesn't map cleanly onto the relational structure here. The `persistence/` boundary keeps that option open later without paying its cost now.)
 
 ## Out of scope (deferred to later decisions)
 
 - **Actually running a `FeatureParser` rule against SERPs and comparing results to ground truth** — this is ADR 0002's already-deferred `/validation` design pass. This ADR only decides how a parser rule's *definition* is stored, and how its output (`ParsedFeature`) is shaped, not the comparison logic itself.
-- **Wiring `backend/app/routers/serps.py`'s annotation routes to `persistence.py`** — implementation detail, not a new decision.
+- **Wiring `backend/app/routers/serps.py`'s annotation routes to `persistence/`** — implementation detail, not a new decision.
 - **SQLAlchemy `relationship()` mappings between the annotation tables** — the current implementation uses plain `ForeignKey` columns and manual joins/queries; `relationship()` (with its backrefs, lazy-loading strategies, and cascade behavior) is deferred until `Session` usage feels more natural. Revisit once basic repository-function usage is comfortable.

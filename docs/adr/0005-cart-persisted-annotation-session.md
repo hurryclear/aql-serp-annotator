@@ -15,7 +15,7 @@ Separately, this workflow's SERP-matching source is not AQL's live Elasticsearch
 
 ### A new persisted resource: `Cart`
 
-`Cart` (`backend/persistence.py`) records that a working session was opened: `id` (UUID, PK), `provider`, `year`, `language`, `created_by` (free text — no login system exists yet), `created_at`. This reverses ADR 0002's "no server-side session" rule specifically for this workflow — the trade-off (a small amount of state, in exchange for an audit trail across sittings) is worth it here, since nothing else provides that traceability.
+`Cart` (`backend/persistence/models.py`) records that a working session was opened: `id` (UUID, PK), `provider`, `year`, `language`, `created_by` (free text — no login system exists yet), `created_at`. This reverses ADR 0002's "no server-side session" rule specifically for this workflow — the trade-off (a small amount of state, in exchange for an audit trail across sittings) is worth it here, since nothing else provides that traceability.
 
 `Cart` deliberately does **not** persist the resolved list of matching SERP ids. That list is computed fresh at creation time (see below) and handed to the frontend in the response; it only needs to survive in the browser for the duration of that sitting, since the frontend pages through it one SERP at a time. Persisting it would only matter if *resuming* an unfinished cart across sessions became a real requirement — it isn't one today. (A `CartSerp` join table for exactly this was designed and then cut for this reason; see `CONTEXT.md`'s `Cart` entry.)
 
@@ -34,11 +34,11 @@ Behavior:
 4. If the result is empty, no `Cart` row is persisted — nothing worth recording happened. Response is `{id: null, serp_ids: [], total: 0}`.
 5. Otherwise, one `Cart` row is persisted, and the response is `{id, serp_ids, total}`.
 
-`manifest.py` is a separate module from both `orm.py` (scoped to AQL's live ES mirror, per ADR 0003) and `persistence.py` (scoped to this app's own annotation/parser storage, per ADR 0004) — it reads a third, distinct data source: the externally-produced manifest snapshot.
+`manifest.py` is a separate module from both `aql/` (scoped to AQL's live ES mirror, per ADR 0003) and `persistence/` (scoped to this app's own annotation/parser storage, per ADR 0004) — it reads a third, distinct data source: the externally-produced manifest snapshot.
 
 ### Consequential change: `save_annotation`
 
-`save_annotation()` (`backend/persistence.py`) gains a new `cart_id` parameter — a property of the annotation event itself, not of any individual feature — threaded through when the (not-yet-built) annotation workspace calls it.
+`save_annotation()` (`backend/persistence/annotations.py`) gains a new `cart_id` parameter — a property of the annotation event itself, not of any individual feature — threaded through when the (not-yet-built) annotation workspace calls it.
 
 ## Consequences
 

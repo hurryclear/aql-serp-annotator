@@ -3,11 +3,9 @@ from uuid import UUID
 
 from warc_s3 import WarcS3Location
 
-from config import Config
-from orm import Serp
+from config import config
+from aql.models import Serp
 from exceptions import SerpNotFoundError, SerpHtmlUnavailableError
-
-config = Config()
 
 
 def _charset(record) -> str:

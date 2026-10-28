@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
 from schemas import CartInput, CartOutput
-from persistence import create_cart
+from persistence.carts import create_cart
 
 
 router = APIRouter()

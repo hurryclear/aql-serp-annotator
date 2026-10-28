@@ -28,7 +28,7 @@ Two direct dependencies on AQL's infrastructure (its ES cluster, its S3 bucket);
 
 ### Data model
 
-`backend/orm.py` holds a copied slice of `archive_query_log/orm.py` — `UuidBaseDocument`, the `Inner*` sub-documents, and `Serp` itself, built on `elasticsearch-pydantic`'s `BaseDocument`/`BaseInnerDocument` (gives `.search()` / `.get()` / `.mget()`). `OrganicResult`/`Feature` are left out for now: the current xpath parser works on top-level SERP feature blocks, not organic result blocks. Add them if that changes.
+`backend/aql/models.py` (originally `backend/orm.py`) holds a copied slice of `archive_query_log/orm.py` — `UuidBaseDocument`, the `Inner*` sub-documents, and `Serp` itself, built on `elasticsearch-pydantic`'s `BaseDocument`/`BaseInnerDocument` (gives `.search()` / `.get()` / `.mget()`). `OrganicResult`/`Feature` are left out for now: the current xpath parser works on top-level SERP feature blocks, not organic result blocks. Add them if that changes.
 
 ### Access pattern
 
@@ -51,7 +51,7 @@ python-dotenv~=1.1
 
 - `.env` (real credentials) must never be committed; add to `.gitignore`.
 - `warc_location` is nullable — not every SERP has been through AQL's WARC-caching pipeline stage. The parser must skip or flag those rather than treat a missing location as an error.
-- The copied `orm.py` subset can drift from AQL's real index mappings over time (new fields, renames). Since reads no longer go through the API, nothing surfaces a mismatch except a parse-time validation error — worth a periodic diff against upstream `orm.py`.
+- The copied `aql/models.py` subset can drift from AQL's real index mappings over time (new fields, renames). Since reads no longer go through the API, nothing surfaces a mismatch except a parse-time validation error — worth a periodic diff against upstream `orm.py`.
 - The AQL FastAPI backend remains available for quick manual single-SERP lookups during development; this decision only removes it from the bulk-parsing path.
 
 ## Out of scope (deferred to later decisions)

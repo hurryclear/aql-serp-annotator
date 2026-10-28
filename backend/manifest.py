@@ -3,9 +3,7 @@ placeholder
 """
 import json
 from uuid import UUID
-from config import Config
-
-config = Config()
+from config import config
 
 
 def search_manifest(provider: str, language: str, year: int) -> list[UUID]:

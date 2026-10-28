@@ -124,3 +124,8 @@ class Config(BaseSettings):
 
     # http: HttpConfig = HttpConfig()
     # warc_cache: WarcCacheConfig = WarcCacheConfig()
+
+
+# the one shared instance: import this instead of calling Config() again, so
+# cached clients (sqlite engine, ES, S3) are created once per process
+config = Config()

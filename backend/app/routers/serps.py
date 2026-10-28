@@ -5,9 +5,9 @@ from elasticsearch.exceptions import ConnectionError as EsConnectionError
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import HTMLResponse
 
-from aql import fetch_serp_html
+from aql.client import fetch_serp_html
 from utils.html_utils import clean_serp_html
-from persistence import get_serp_html, save_serp_html
+from persistence.serp_store import get_serp_html, save_serp_html
 from exceptions import SerpNotFoundError, SerpHtmlUnavailableError
 
 
