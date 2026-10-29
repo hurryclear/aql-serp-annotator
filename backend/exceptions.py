@@ -2,6 +2,11 @@ class AnnotationExistsError(Exception):
     pass
 
 
+class CartNotFoundError(Exception):
+    """The cart_id an annotation points at doesn't exist."""
+    pass
+
+
 class SerpNotFoundError(Exception):
     """The serp_id doesn't exist in AQL's Elasticsearch index."""
     pass

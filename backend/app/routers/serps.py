@@ -8,7 +8,9 @@ from fastapi.responses import HTMLResponse
 from aql.client import fetch_serp_html
 from utils.html_utils import clean_serp_html
 from persistence.serp_store import get_serp_html, save_serp_html
-from exceptions import SerpNotFoundError, SerpHtmlUnavailableError
+from persistence.annotations import save_annotation
+from schemas import AnnotationInput
+from exceptions import AnnotationExistsError, CartNotFoundError, SerpNotFoundError, SerpHtmlUnavailableError
 
 
 router = APIRouter(prefix="/serps", tags=["serps"])
@@ -40,3 +42,14 @@ def get_serp(serp_id: UUID, raw: bool = False) -> HTMLResponse:
     cleaned = clean_serp_html(html, base_url=capture_url)
     save_serp_html(serp_id, cleaned)
     return HTMLResponse(cleaned)
+
+
+# an empty features list is a real answer ("No blocks"): the SERP is marked done
+@router.post("/{serp_id}/annotation", status_code=204)
+def create_annotation(serp_id: UUID, annotation: AnnotationInput) -> None:
+    try:
+        save_annotation(serp_id, annotation.cart_id, annotation.features)
+    except AnnotationExistsError:
+        raise HTTPException(status_code=409, detail=f"SERP {serp_id} is already annotated")
+    except CartNotFoundError:
+        raise HTTPException(status_code=404, detail=f"Cart {annotation.cart_id} does not exist")
