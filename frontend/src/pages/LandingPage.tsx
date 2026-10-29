@@ -1,7 +1,4 @@
 import { useState } from "react";
-import Box from "@mui/material/Box";
-import Card from "@mui/material/Card";
-import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
 import TextField from "@mui/material/TextField";
 import Stack from "@mui/material/Stack";
@@ -10,6 +7,7 @@ import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { useNavigate } from "react-router-dom";
 import { createCart } from "../api/carts";
 import Selector from "../components/Selector";
+import CenteredCard from "../components/CenteredCard";
 import { missingFields, type CartForm } from "./landingForm";
 import type { WorkspaceState } from "../types/workspace";
 
@@ -64,9 +62,7 @@ function LandingPage() {
   }
 
   return (
-    <Box sx={{ minHeight: "100%", display: "flex", alignItems: "center", justifyContent: "center", p: 2 }}>
-      <Card sx={{ width: "100%", maxWidth: 380 }}>
-        <CardContent sx={{ p: 3 }}>
+    <CenteredCard>
           <Typography variant="h5" component="h1">AQL SERP annotation</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, mb: 3 }}>
             Choose which SERPs to annotate in this sitting.
@@ -101,9 +97,7 @@ function LandingPage() {
               {error}
             </Typography>
           )}
-        </CardContent>
-      </Card>
-    </Box>
+    </CenteredCard>
   );
 }
 

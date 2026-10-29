@@ -13,7 +13,7 @@ Each step only needs the ones above it, except 5, which can go any time.
 - [x] **3. `POST /serps/{id}/annotation`**: save an annotation through `save_annotation`. `AnnotationExistsError` → 409; decide how the client asks to overwrite; an empty feature list means "No features". File: `app/routers/serps.py`.
 - [ ] **4. `GET /serps/{id}/annotation`**: new `get_annotation(serp_id)` in `persistence/annotations.py`, joining `annotated_feature` with `feature`; returns `AnnotatedFeatureOutput` items, 404 when there's no annotation.
 - [ ] **5. Reject non-HTML captures**: in `aql/client.py`, raise `SerpHtmlUnavailableError` when `capture.mimetype` isn't `text/html` (seen: SERP `df324096…` is a 2001 `robots.txt` capture). Delete that cached snapshot afterwards.
-- [ ] **6. Annotation workspace (frontend)**: `LandingPage` passes the cart's `serp_ids` on (navigate drops them today); `AnnotationPage` shows each SERP in an iframe, the annotator marks each block in DevTools and picks its category, then Save / No blocks (empty annotation) / Skip (saves nothing). No xpath step for now; `xpath` becomes optional. Design: `docs/superpowers/specs/2026-10-29-landing-and-annotation-pages-design.md`.
+- [x] **6. Annotation workspace (frontend)**: `LandingPage` passes the cart's `serp_ids` on (navigate drops them today); `AnnotationPage` shows each SERP in an iframe, the annotator marks each block in DevTools and picks its category, then Save / No blocks (empty annotation) / Skip (saves nothing). No xpath step for now; `xpath` becomes optional. Design: `docs/superpowers/specs/2026-10-29-landing-and-annotation-pages-design.md`.
 
 ## Candidate SERPs
 
