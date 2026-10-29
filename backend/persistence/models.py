@@ -43,7 +43,7 @@ class AnnotatedFeature(Base):
     __tablename__ = "annotated_feature"
     feature_id: Mapped[UUID] = mapped_column(ForeignKey("feature.id"), primary_key=True)
     annotated_serp_id: Mapped[UUID] = mapped_column(ForeignKey("annotation.serp_id"))
-    xpath: Mapped[str]
+    xpath: Mapped[str | None]
 
 
 class ParsedFeature(Base):
