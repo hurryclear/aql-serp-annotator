@@ -21,7 +21,7 @@ Each step only needs the ones above it, except 5, which can go any time.
 - [ ] **Filter script**: query AQL (provider, year, language) and keep only annotatable SERPs: `warc_location` set, `capture.mimetype == "text/html"`, `capture.status_code == 200`. Uses `Serp.search(...).scan()` (ADR 0003). Decide whether it lives in this repo.
 - [ ] **Decide: multi-language values** such as `"de+en"` and `"fr+pt"`. `search_candidate_serps` compares with exact `==`, so they never match `LANGUAGES["english"] = "en"`.
 - [ ] **One source of truth for providers, languages and years.** Today the lists live in three places that disagree: `mapping.py` (13 providers, 10 languages), `resources/providers.json` (14 providers, a different set), and hardcoded in `LandingPage.tsx` (same as `mapping.py`; years only 2010–2013, while candidate SERPs span 2001–2017). Plan:
-  1. Move the provider (name → AQL id) and language (name → code) lists to JSON in `resources/`, merging `mapping.py` with `providers.json`; delete `mapping.py`.
+  1. Move the provider (name → AQL id) and language (name → code) lists to JSON in `resources/`, merging `mapping.py` with `providers.json`; delete `mapping.py`. Languages done: `resources/languages.json`, which `mapping.py` reads into `LANGUAGES`.
   2. Add a small route (e.g. `GET /options`) that returns the lists; `LandingPage` fills its dropdowns from it instead of hardcoding.
   3. Option to decide: build the options from the candidate SERPs file itself, so only provider / language / year combinations that exist are offered.
   Settles together with "where file readers live" (`candidate_serps.py`, the taxonomy for `GET /features/type`).

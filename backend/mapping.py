@@ -1,4 +1,8 @@
 """human-friendly names (as entered on the landing page) -> canonical values used in the candidate SERPs file and Cart records"""
+import json
+from pathlib import Path
+
+RESOURCES_PATH = Path(__file__).resolve().parent / "resources"
 
 PROVIDERS: dict[str, str] = {
     "google": "f205fc44-d918-4b79-9a7f-c1373a6ff9f2",
@@ -16,15 +20,8 @@ PROVIDERS: dict[str, str] = {
     "weibo": "76114509-8086-47e9-8fac-c1d4707772f7",
 }
 
+# read once, at import: the file only changes together with the code
+_languages_file = json.loads((RESOURCES_PATH / "languages.json").read_text(encoding="utf-8"))
 LANGUAGES: dict[str, str] = {
-    "arabic": "ar",
-    "bengali": "bn",
-    "german": "de",
-    "english": "en",
-    "spanish": "es",
-    "french": "fr",
-    "indonesian": "id",
-    "portuguese": "pt",
-    "russian": "ru",
-    "chinese": "zh",
+    language["name"]: language["code"] for language in _languages_file["languages"]
 }
