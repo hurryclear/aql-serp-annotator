@@ -8,12 +8,12 @@ Last updated: 2026-10-29
 
 Each step only needs the ones above it, except 5, which can go any time.
 
-- [ ] **1. `GET /features/type`**: return the feature-type taxonomy from `resources/serp_features_taxonomy.json` (26 categories) for the workspace dropdown. File: `app/routers/features.py` (empty). Decide: full file or `id` + `label` only; call them `categories` or `feature_types` (ADR 0002 renamed the term); read once at startup or per request. Loaded already: `utils/resource_json_loader.FEATURE_TYPES`.
+- [x] **1. `GET /features/type`**: return the feature-type taxonomy from `resources/serp_features_taxonomy.json` (26 categories) for the workspace dropdown. File: `app/routers/features.py` (empty). Decide: full file or `id` + `label` only; call them `categories` or `feature_types` (ADR 0002 renamed the term); read once at startup or per request. Done: returns `id` + `label` only, read from `utils/resource_json_loader.FEATURE_TYPES` (ids stripped: one has a trailing space).
 - [ ] **2. `POST /xpath`**: test a rule xpath against the SERP HTML and the clicked block; say whether it matches. Uses lxml and `utils/html_utils.normalize_html`. Stateless. File: `app/routers/xpath.py` (empty). ADR 0002.
-- [ ] **3. `POST /serps/{id}/annotation`**: save an annotation through `save_annotation`. `AnnotationExistsError` → 409; decide how the client asks to overwrite; an empty feature list means "No features". File: `app/routers/serps.py`.
+- [x] **3. `POST /serps/{id}/annotation`**: save an annotation through `save_annotation`. `AnnotationExistsError` → 409; decide how the client asks to overwrite; an empty feature list means "No features". File: `app/routers/serps.py`.
 - [ ] **4. `GET /serps/{id}/annotation`**: new `get_annotation(serp_id)` in `persistence/annotations.py`, joining `annotated_feature` with `feature`; returns `AnnotatedFeatureOutput` items, 404 when there's no annotation.
 - [ ] **5. Reject non-HTML captures**: in `aql/client.py`, raise `SerpHtmlUnavailableError` when `capture.mimetype` isn't `text/html` (seen: SERP `df324096…` is a 2001 `robots.txt` capture). Delete that cached snapshot afterwards.
-- [ ] **6. Annotation workspace (frontend)**: `LandingPage` passes the cart's `serp_ids` on (navigate drops them today); `AnnotationPage` shows each SERP in an iframe, click to select a block, test its xpath, then Save / No features (empty annotation) / Skip (saves nothing).
+- [x] **6. Annotation workspace (frontend)**: `LandingPage` passes the cart's `serp_ids` on (navigate drops them today); `AnnotationPage` shows each SERP in an iframe, the annotator marks each block in DevTools and picks its category, then Save / No blocks (empty annotation) / Skip (saves nothing). No xpath step for now; `xpath` becomes optional. Design: `docs/superpowers/specs/2026-10-29-landing-and-annotation-pages-design.md`.
 
 ## Candidate SERPs
 
@@ -43,7 +43,7 @@ Each step only needs the ones above it, except 5, which can go any time.
 - [ ] **`/validation`**: compare parser output with ground truth. Open: API route or separate script (ADR 0002).
 - [ ] **Ground-truth editing**: review mismatches and correct annotations.
 - [ ] **Resume an unfinished cart**: would need the offered batch persisted (a `CartSerp` table, cut for now; ADR 0005).
-- [ ] **`tests/` folder**: turn the smoke checks (shared config, carts, annotations, snapshots, environment isolation) into a pytest suite.
+- [ ] **`tests/` folder** (started in `backend/tests/`, run with `uv run pytest`): turn the smoke checks (shared config, carts, annotations, snapshots, environment isolation) into a pytest suite.
 
 ## Done
 

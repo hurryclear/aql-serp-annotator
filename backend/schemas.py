@@ -6,14 +6,14 @@ from dataclasses import dataclass
 class AnnotatedFeatureInput ():
     type: str
     content: str
-    xpath: str
+    xpath: str | None = None
 
 
 @dataclass
 class AnnotatedFeatureOutput ():
     id: UUID
     type: str
-    xpath: str
+    xpath: str | None = None
 
 
 @dataclass
@@ -36,3 +36,9 @@ class CartOutput():
 class AnnotationInput():
     cart_id: UUID
     features: list[AnnotatedFeatureInput]
+
+
+@dataclass
+class FeatureType():
+    id: str
+    label: str

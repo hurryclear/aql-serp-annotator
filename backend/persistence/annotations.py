@@ -4,10 +4,10 @@ from uuid import UUID, uuid5
 from hashlib import sha256
 
 from schemas import AnnotatedFeatureInput
-from exceptions import AnnotationExistsError
+from exceptions import AnnotationExistsError, CartNotFoundError
 from namespaces import NAMESPACE_FEATURE
 from persistence.database import SessionLocal
-from persistence.models import Annotation, AnnotatedFeature, Feature
+from persistence.models import Annotation, AnnotatedFeature, Cart, Feature
 
 
 def save_annotation(
@@ -22,9 +22,13 @@ def save_annotation(
     type+content) and linked to this SERP via an AnnotatedFeature carrying
     its xpath. A single Annotation row marks the SERP as done; if one
     already exists, raises AnnotationExistsError unless overwrite=True, in
-    which case the SERP's prior feature links are replaced.
+    which case the SERP's prior feature links are replaced. Raises
+    CartNotFoundError if cart_id doesn't exist.
     """
     with SessionLocal() as session:
+        if session.get(Cart, cart_id) is None:
+            raise CartNotFoundError(f"cart {cart_id} does not exist")
+
         existing = session.get(Annotation, serp_id)
 
         if existing is not None and not overwrite:

@@ -8,9 +8,10 @@ interface SelectorProps {
     options: string[];
     value: string;
     onChange: (value: string) => void;
+    error?: boolean;
 }
 
-function Selector({ label, options, value, onChange }: SelectorProps) {
+function Selector({ label, options, value, onChange, error = false }: SelectorProps) {
     const labelId = `${label}-select-label`;
 
     const handleChange = (event: SelectChangeEvent) => {
@@ -18,7 +19,7 @@ function Selector({ label, options, value, onChange }: SelectorProps) {
     };
 
     return (
-        <FormControl variant="standard" sx={{ m: 1, minWidth: 120 }}>
+        <FormControl variant="standard" fullWidth error={error}>
         <InputLabel id={labelId}>{label}</InputLabel>
         <Select labelId={labelId} value={value} onChange={handleChange}>
             {options.map((option) => (
