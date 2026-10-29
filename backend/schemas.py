@@ -36,3 +36,9 @@ class CartOutput():
 class AnnotationInput():
     cart_id: UUID
     features: list[AnnotatedFeatureInput]
+
+
+@dataclass
+class FeatureType():
+    id: str
+    label: str
