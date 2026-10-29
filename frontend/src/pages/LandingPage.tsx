@@ -43,7 +43,7 @@ function LandingPage() {
         <Stack spacing={2}>
           <Selector
             label="Provider"
-            options={["Google", "Baidu", "Bing", "DuckDuckGo", "Yandex", "Twitter", "Wikipedia", "YouTube", "Google Scholar", "SemanticScholar", "e621", "360", "Weibo"]}
+            options={["Google", "Baidu", "Yahoo", "360", "Bing", "Naver", "Yandex", "Sogou", "Daum", "Ask.com", "Rambler", "Seznam", "Ecosia", "Goo"]}
             value={provider}
             onChange={setProvider}
           />

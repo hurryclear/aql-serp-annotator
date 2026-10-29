@@ -3,7 +3,7 @@ import random
 
 from schemas import CartInput, CartOutput
 from candidate_serps import search_candidate_serps
-from mapping import PROVIDERS, LANGUAGES
+from utils.resource_json_loader import PROVIDERS, LANGUAGES
 from persistence.database import SessionLocal
 from persistence.models import Annotation, Cart
 
