@@ -80,21 +80,21 @@
         {
             "name": "seznam",
             "id": "22eba7be-a91c-4b21-80d3-0e837126f203",
-            "score": 917.0,
+            "priority": 917.0,
             "language": "Czech",
             "market": "Czech Republic"
         },
         {
             "name": "ecosia",
             "id": "7a88141f-90b9-49a5-9083-9a922038c16c",
-            "score": 915.0,
+            "priority": 915.0,
             "language": "English, German / multilingual",
             "market": "Worldwide, Germany-based"
         },
         {
             "name": "goo",
             "id": "183282c3-ff26-429b-ae25-f6dbfe90e94e",
-            "score": 913.0,
+            "priority": 913.0,
             "language": "Japanese",
             "market": "Japan"
         }

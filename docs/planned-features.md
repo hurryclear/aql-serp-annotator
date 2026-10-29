@@ -8,7 +8,7 @@ Last updated: 2026-10-29
 
 Each step only needs the ones above it, except 5, which can go any time.
 
-- [x] **1. `GET /features/type`**: return the feature-type taxonomy from `resources/serp_features_taxonomy.json` (26 categories) for the workspace dropdown. File: `app/routers/features.py` (empty). Decide: full file or `id` + `label` only; call them `categories` or `feature_types` (ADR 0002 renamed the term); read once at startup or per request; where the file reader lives.
+- [x] **1. `GET /features/type`**: return the feature-type taxonomy from `resources/serp_features_taxonomy.json` (26 categories) for the workspace dropdown. File: `app/routers/features.py` (empty). Decide: full file or `id` + `label` only; call them `categories` or `feature_types` (ADR 0002 renamed the term); read once at startup or per request. Done: returns `id` + `label` only, read from `utils/resource_json_loader.FEATURE_TYPES` (ids stripped: one has a trailing space).
 - [ ] **2. `POST /xpath`**: test a rule xpath against the SERP HTML and the clicked block; say whether it matches. Uses lxml and `utils/html_utils.normalize_html`. Stateless. File: `app/routers/xpath.py` (empty). ADR 0002.
 - [x] **3. `POST /serps/{id}/annotation`**: save an annotation through `save_annotation`. `AnnotationExistsError` → 409; decide how the client asks to overwrite; an empty feature list means "No features". File: `app/routers/serps.py`.
 - [ ] **4. `GET /serps/{id}/annotation`**: new `get_annotation(serp_id)` in `persistence/annotations.py`, joining `annotated_feature` with `feature`; returns `AnnotatedFeatureOutput` items, 404 when there's no annotation.
@@ -20,11 +20,11 @@ Each step only needs the ones above it, except 5, which can go any time.
 - [ ] **Real candidate set**: write `resources/candidate_serps.jsonl` for prod. Until it exists, `POST /carts` in prod has nothing to offer.
 - [ ] **Filter script**: query AQL (provider, year, language) and keep only annotatable SERPs: `warc_location` set, `capture.mimetype == "text/html"`, `capture.status_code == 200`. Uses `Serp.search(...).scan()` (ADR 0003). Decide whether it lives in this repo.
 - [ ] **Decide: multi-language values** such as `"de+en"` and `"fr+pt"`. `search_candidate_serps` compares with exact `==`, so they never match `LANGUAGES["english"] = "en"`.
-- [ ] **One source of truth for providers, languages and years.** Today the lists live in three places that disagree: `mapping.py` (13 providers, 10 languages), `resources/providers.json` (14 providers, a different set), and hardcoded in `LandingPage.tsx` (same as `mapping.py`; years only 2010–2013, while candidate SERPs span 2001–2017). Plan:
-  1. Move the provider (name → AQL id) and language (name → code) lists to JSON in `resources/`, merging `mapping.py` with `providers.json`; delete `mapping.py`. Languages done: `resources/languages.json`, which `mapping.py` reads into `LANGUAGES`.
+- [ ] **One source of truth for providers, languages and years.** The lists now live in `resources/` (`providers.json`, `languages.json`), but `LandingPage.tsx` still hardcodes a copy of each (years only 2010–2013, while candidate SERPs span 2001–2017). Plan:
+  1. ~~Move the provider (name → AQL id) and language (name → code) lists to JSON in `resources/`.~~ Done: `utils/resource_json_loader.py` (was `mapping.py`) reads both files into `PROVIDERS` and `LANGUAGES`. Providers are the curated 14 web search engines in `providers.json`; the 8 that were only in the old inline list (duckduckgo, twitter, wikipedia, youtube, google scholar, semanticscholar, e621, weibo) were dropped on 2026-10-29.
   2. Add a small route (e.g. `GET /options`) that returns the lists; `LandingPage` fills its dropdowns from it instead of hardcoding.
   3. Option to decide: build the options from the candidate SERPs file itself, so only provider / language / year combinations that exist are offered.
-  Settles together with "where file readers live" (`candidate_serps.py`, the taxonomy for `GET /features/type`).
+- [x] **Where file readers live**: fixed lists that are the same in every environment (providers, languages, the feature-type taxonomy) are loaded in `utils/resource_json_loader.py`. Files that change with `APP_ENV` (candidate SERPs) go through `config`.
 - [ ] **Decide: where `candidate_serps.py` lives**: top level (today) or `persistence/` (local data access).
 - [ ] Later: record which candidate-set version a `Cart` was drawn from, for traceability.
 

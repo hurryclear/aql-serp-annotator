@@ -11,7 +11,7 @@ import CenteredCard from "../components/CenteredCard";
 import { missingFields, type CartForm } from "./landingForm";
 import type { WorkspaceState } from "../types/workspace";
 
-const PROVIDERS = ["Google", "Baidu", "Bing", "DuckDuckGo", "Yandex", "Twitter", "Wikipedia", "YouTube", "Google Scholar", "SemanticScholar", "e621", "360", "Weibo"];
+const PROVIDERS = ["Google", "Baidu", "Yahoo", "360", "Bing", "Naver", "Yandex", "Sogou", "Daum", "Ask.com", "Rambler", "Seznam", "Ecosia", "Goo"];
 const LANGUAGES = ["Arabic", "Bengali", "German", "English", "Spanish", "French", "Indonesian", "Portuguese", "Russian", "Chinese"];
 const YEARS = ["2010", "2011", "2012", "2013"];
 
