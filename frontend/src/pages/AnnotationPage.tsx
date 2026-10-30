@@ -29,7 +29,7 @@ function AnnotationPage() {
   if (!cartId || !state) {
     return (
       <CenteredCard>
-        <Typography variant="body1">
+        <Typography variant="body1" color="text.secondary">
           This cart isn't open in this tab anymore. Start a new one from the{" "}
           <Link component={RouterLink} to="/">landing page</Link>.
         </Typography>
@@ -234,7 +234,7 @@ function SerpSession({ cartId, serpId, featureTypes, typesError, onDone }: SerpS
         </DialogContent>
         <DialogActions>
           <Button variant="outlined" onClick={() => setConfirmOpen(false)}>Cancel</Button>
-          <Button variant="outlined" color="error" onClick={() => { setConfirmOpen(false); submit([]); }}>
+          <Button variant="outlined" sx={{ color: "error.main" }} onClick={() => { setConfirmOpen(false); submit([]); }}>
             Save as no blocks
           </Button>
         </DialogActions>

@@ -1,6 +1,7 @@
 import { useState } from "react";
+import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-import TextField from "@mui/material/TextField";
+import OutlinedInput from "@mui/material/OutlinedInput";
 import Stack from "@mui/material/Stack";
 import Button from "@mui/material/Button";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
@@ -8,6 +9,8 @@ import { useNavigate } from "react-router-dom";
 import { createCart } from "../api/carts";
 import Selector from "../components/Selector";
 import CenteredCard from "../components/CenteredCard";
+import Field from "../components/Field";
+import InlineError from "../components/InlineError";
 import { missingFields, type CartForm } from "./landingForm";
 import type { WorkspaceState } from "../types/workspace";
 
@@ -64,22 +67,24 @@ function LandingPage() {
   return (
     <CenteredCard>
           <Typography variant="h5" component="h1">AQL SERP annotation</Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, mb: 3 }}>
+          <Typography variant="body1" color="text.secondary" sx={{ mt: 0.5, mb: 2.5 }}>
             Choose which SERPs to annotate in this sitting.
           </Typography>
-          <Stack spacing={2}>
+          <Stack spacing={1.5}>
             <Selector label="Provider" options={PROVIDERS} value={form.provider} onChange={(v) => update("provider", v)} error={missing.includes("provider")} />
             <Selector label="Language" options={LANGUAGES} value={form.language} onChange={(v) => update("language", v)} error={missing.includes("language")} />
             <Selector label="Year" options={YEARS} value={form.year} onChange={(v) => update("year", v)} error={missing.includes("year")} />
-            <TextField
-              label="Your name"
-              variant="standard"
-              value={form.createdBy}
-              onChange={(e) => update("createdBy", e.target.value)}
-              error={missing.includes("createdBy")}
-            />
+            <Field label="Your name">
+              <OutlinedInput
+                fullWidth
+                placeholder="Name or initials"
+                value={form.createdBy}
+                onChange={(e) => update("createdBy", e.target.value)}
+                error={missing.includes("createdBy")}
+              />
+            </Field>
           </Stack>
-          <Typography variant="caption" color="text.secondary" component="p" sx={{ mt: 2 }}>
+          <Typography variant="caption" color="text.disabled" component="p" sx={{ mt: 1.5 }}>
             You'll get up to 25 SERPs you haven't annotated yet.
           </Typography>
           <Button
@@ -93,9 +98,9 @@ function LandingPage() {
             Start annotating
           </Button>
           {error && (
-            <Typography variant="body2" color="error" sx={{ mt: 1.5 }}>
-              {error}
-            </Typography>
+            <Box sx={{ mt: 1.25 }}>
+              <InlineError>{error}</InlineError>
+            </Box>
           )}
     </CenteredCard>
   );
