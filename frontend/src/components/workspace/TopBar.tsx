@@ -15,13 +15,13 @@ type TopBarProps = {
 
 function TopBar({ position, total, provider, language, year, onExit }: TopBarProps) {
   return (
-    <Card>
-      <Stack direction="row" spacing={2} sx={{ alignItems: "center", px: 2, py: 1 }}>
-        <Typography variant="subtitle2" sx={{ whiteSpace: "nowrap" }}>
+    <Card sx={{ borderRadius: 1 }}>
+      <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", px: 1.5, py: 1 }}>
+        <Typography variant="subtitle1" sx={{ whiteSpace: "nowrap" }}>
           SERP {position} of {total}
         </Typography>
-        <LinearProgress variant="determinate" value={(position / total) * 100} sx={{ flex: 1, height: 6, borderRadius: 3 }} />
-        <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: "nowrap" }}>
+        <LinearProgress variant="determinate" value={(position / total) * 100} sx={{ flex: 1 }} />
+        <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: "nowrap" }}>
           {provider} · {language} · {year}
         </Typography>
         <Button variant="outlined" size="small" onClick={onExit}>Exit</Button>

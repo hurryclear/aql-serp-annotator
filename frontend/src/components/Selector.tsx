@@ -1,7 +1,7 @@
-import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
-import FormControl from '@mui/material/FormControl';
 import Select, { type SelectChangeEvent } from '@mui/material/Select';
+import Field from './Field';
+import { tokens } from '../theme';
 
 interface SelectorProps {
     label: string;
@@ -12,23 +12,27 @@ interface SelectorProps {
 }
 
 function Selector({ label, options, value, onChange, error = false }: SelectorProps) {
-    const labelId = `${label}-select-label`;
-
     const handleChange = (event: SelectChangeEvent) => {
         onChange(event.target.value);
     };
 
     return (
-        <FormControl variant="standard" fullWidth error={error}>
-        <InputLabel id={labelId}>{label}</InputLabel>
-        <Select labelId={labelId} value={value} onChange={handleChange}>
-            {options.map((option) => (
-            <MenuItem key={option} value={option}>
-                {option}
-            </MenuItem>
-            ))}
-        </Select>
-        </FormControl>
+        <Field label={label}>
+            <Select
+                value={value}
+                onChange={handleChange}
+                error={error}
+                fullWidth
+                displayEmpty
+                renderValue={(selected) => selected || <span style={{ color: tokens.textMuted }}>Choose…</span>}
+            >
+                {options.map((option) => (
+                    <MenuItem key={option} value={option} sx={{ fontSize: 14 }}>
+                        {option}
+                    </MenuItem>
+                ))}
+            </Select>
+        </Field>
     );
 }
 

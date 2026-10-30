@@ -2,6 +2,7 @@ import { useRef } from "react";
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import Typography from "@mui/material/Typography";
+import InlineError from "../InlineError";
 
 type SerpFrameProps = {
   html: string | null;
@@ -20,11 +21,11 @@ function SerpFrame({ html, error, onReady }: SerpFrameProps) {
   }
 
   return (
-    <Card sx={{ flex: 1, minWidth: 0, display: "flex" }}>
+    <Card sx={{ flex: 1, minWidth: 0, display: "flex", borderRadius: 1 }}>
       {error ? (
-        <Typography color="error" sx={{ m: "auto", p: 2 }}>{error}</Typography>
+        <Box sx={{ m: "auto", p: 2 }}><InlineError>{error}</InlineError></Box>
       ) : html === null ? (
-        <Typography color="text.secondary" sx={{ m: "auto" }}>Loading SERP…</Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ m: "auto" }}>Loading SERP…</Typography>
       ) : (
         <Box
           component="iframe"
