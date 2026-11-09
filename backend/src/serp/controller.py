@@ -7,9 +7,10 @@ from fastapi.responses import HTMLResponse
 
 from aql.client import fetch_serp_html
 from utils.html_utils import clean_serp_html
-from persistence.serp_store import get_serp_html, save_serp_html
-from persistence.annotations import save_annotation
+from src.serp.service import get_serp_html, save_serp_html
+from src.annotation.service import save_annotation
 from schemas import AnnotationInput
+
 from exceptions import AnnotationExistsError, CartNotFoundError, SerpNotFoundError, SerpHtmlUnavailableError
 
 
