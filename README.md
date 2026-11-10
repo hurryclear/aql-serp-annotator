@@ -25,8 +25,8 @@ uv run uvicorn app.main:app --reload
 
 | `APP_ENV` | Local data | Candidate SERPs |
 |---|---|---|
-| `test` | `data/test/` | `resources/candidate_serps_test.jsonl` |
-| `prod` | `data/prod/` | `resources/candidate_serps.jsonl` |
+| `test` | `data/test/` | `resources/question_serps_test.jsonl` |
+| `prod` | `data/prod/` | `resources/question_serps.jsonl` |
 
 For real annotation, put `APP_ENV=prod` in `backend/.env`, or run once in prod:
 

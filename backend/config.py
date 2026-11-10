@@ -10,6 +10,14 @@ from warc_s3 import WarcS3Store
 from sqlalchemy import create_engine, event, Engine
 
 
+DATA_ROOT = Path(__file__).resolve().parent.parent / "data"
+
+ENVIRONMENTS: dict[str, dict[str, Any]] = {
+    "test": {"data_path": DATA_ROOT / "test", "candidates_file": "question_serps_test.jsonl"},
+    "prod": {"data_path": DATA_ROOT / "prod", "candidates_file": "question_serps.jsonl"},
+}
+
+
 class EsConfig(BaseSettings):
     model_config = SettingsConfigDict(frozen=True)
 
@@ -66,16 +74,6 @@ class S3Config(BaseSettings):
     # @cached_property
     # def warc_store(self) -> WarcStore:
     #     return WarcS3StoreWrapper(self.warc_s3_store)
-
-
-DATA_ROOT = Path(__file__).resolve().parent.parent / "data"
-
-# the only things that differ between environments (ADR 0006); code and AQL access
-# are the same. Each value is a default: an explicit env var or .env entry still wins
-ENVIRONMENTS: dict[str, dict[str, Any]] = {
-    "test": {"data_path": DATA_ROOT / "test", "candidates_file": "candidate_serps_test.jsonl"},
-    "prod": {"data_path": DATA_ROOT / "prod", "candidates_file": "candidate_serps.jsonl"},
-}
 
 
 # local data store
