@@ -42,13 +42,27 @@ def number_elements(html_str: str) -> str:
     return _serialize(root)
 
 
-def mark_features(html_str: str, marks: list[tuple[int, str]]) -> str:
+def marked_nodes(html_str: str) -> list[tuple[int, str]]:
+    """(node number, feature type) of every marked element, in page order."""
+    root = _parse(html_str)
+    return [
+        (int(element.get(NODE_ATTR)), element.get(TYPE_ATTR))
+        for element in root.iter(etree.Element)
+        if element.get(TYPE_ATTR) is not None and element.get(NODE_ATTR) is not None
+    ]
+
+
+def mark_features(html_str: str, marks: list[tuple[int, str]], clear_old: bool = False) -> str:
     """Write aqlqa-sf-type onto the elements with these numbers.
 
-    marks: (node number, feature type) per feature. Raises InvalidMarkError if
-    a number isn't in the snapshot.
+    marks: (node number, feature type) per feature. clear_old removes every
+    existing aqlqa-sf-type first, as when an edited annotation replaces the old
+    one. Raises InvalidMarkError if a number isn't in the snapshot.
     """
     root = _parse(html_str)
+    if clear_old:
+        for element in root.iter(etree.Element):
+            element.attrib.pop(TYPE_ATTR, None)
     by_number = {element.get(NODE_ATTR): element for element in root.iter(etree.Element)}
     for node, feature_type in marks:
         element = by_number.get(str(node))
