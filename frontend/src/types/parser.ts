@@ -18,3 +18,9 @@ export type ParserOutput = {
   serps: number;   // SERPs whose blocks are linked to it
   years: number[]; // the years of those SERPs
 };
+
+// PUT /parsers/{id}/serps/{serp_id}
+export type LinkOutput = {
+  parser: ParserOutput;
+  linked: number[]; // aqlqa-node numbers of the blocks now linked to it
+};
