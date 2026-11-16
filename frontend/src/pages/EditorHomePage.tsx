@@ -97,13 +97,22 @@ function GroupRow({ group }: { group: AnnotationGroup }) {
         <TableCell>{group.year}</TableCell>
         <TableCell align="right">{group.annotations}</TableCell>
         <TableCell align="right">{group.ground_truth}</TableCell>
-        <TableCell align="right">
+        <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>
           <Button
             variant="outlined"
             size="small"
             onClick={() => navigate(`/editor/${group.provider_id}/${group.year}`, { state: { provider: group.provider } })}
           >
             Open
+          </Button>
+          {/* the next step after reviewing: find xpaths for this group's feature blocks */}
+          <Button
+            variant="outlined"
+            size="small"
+            sx={{ ml: 0.75 }}
+            onClick={() => navigate(`/parsers/${group.provider_id}/${group.year}`, { state: { provider: group.provider } })}
+          >
+            Design parsers
           </Button>
         </TableCell>
       </TableRow>
