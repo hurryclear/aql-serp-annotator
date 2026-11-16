@@ -7,8 +7,8 @@ from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import HTMLResponse
 
 from aql.client import fetch_serp_html
-from src.serp.model import SerpSimple
-from src.serp.service import build_snapshot, get_serp_html, save_serp_html, list_serps
+from src.serp.model import SerpCount, SerpSimple
+from src.serp.service import build_snapshot, count_serps, get_serp_html, save_serp_html, list_serps
 
 from exceptions import (
     SerpNotFoundError,
@@ -30,6 +30,16 @@ def list_all(
 ) -> list[SerpSimple]:
     try:
         return list_serps(provider, language, year, annotated, limit)
+    except UnknownOptionError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+
+
+# GET /serps/count?provider=Google&language=English&year=2011, any of the three can be left out
+# declared before /{serp_id}: routes match in order, and "count" would be read as a serp_id
+@router.get("/count")
+def count(provider: str | None = None, language: str | None = None, year: int | None = None) -> SerpCount:
+    try:
+        return count_serps(provider, language, year)
     except UnknownOptionError as e:
         raise HTTPException(status_code=422, detail=str(e))
 
