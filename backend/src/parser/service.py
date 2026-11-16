@@ -92,6 +92,15 @@ def _output(session, parser: Parser) -> ParserOutput:
     )
 
 
+def list_parsers(provider_id: str, feature_type: str | None = None) -> list[ParserOutput]:
+    """A provider's parsers, of every year, optionally of one feature type."""
+    with SessionLocal() as session:
+        query = session.query(Parser).filter_by(provider=provider_id)
+        if feature_type is not None:
+            query = query.filter_by(feature_type=feature_type)
+        return [_output(session, p) for p in query.order_by(Parser.feature_type, Parser.created_at).all()]
+
+
 def _next_parser_id(session, provider_id: str, year: int, feature_type: str) -> UUID:
     """uuid5(provider:year:feature_type:k) with the smallest free k.
 

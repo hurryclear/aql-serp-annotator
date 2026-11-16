@@ -116,6 +116,14 @@ def test_use_an_existing_parser_on_a_serp_of_another_year(client):
     assert parser_of(SERP_B) == UUID(parser_id)
 
 
+def test_list_by_provider_and_type_spans_every_year(client):
+    parser_id = save(client, "//div[@class='kp']").json()["id"]
+    use(client, parser_id, SERP_B)
+    listed = client.get("/parsers", params={"provider_id": A["provider"], "feature_type": "kp"}).json()
+    assert [(p["id"], p["serps"]) for p in listed] == [(parser_id, 2)]
+    assert client.get("/parsers", params={"provider_id": A["provider"], "feature_type": "ads"}).json() == []
+
+
 def test_using_another_parser_replaces_a_blocks_link(client):
     first = save(client, "//div[@class='kp']").json()["id"]
     second = save(client, "//body/div[1]").json()["id"]  # same block, saved as a second parser

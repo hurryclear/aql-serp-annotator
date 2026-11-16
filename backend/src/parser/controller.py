@@ -9,7 +9,12 @@ from src.parser.models import (
     TryInput,
     TryOutput,
 )
-from src.parser.service import create_parser, link_parser, try_xpath
+from src.parser.service import (
+    create_parser,
+    link_parser,
+    list_parsers,
+    try_xpath,
+)
 from exceptions import (
     AnnotationNotFoundError,
     InvalidMarkError,
@@ -30,6 +35,12 @@ def try_(body: TryInput) -> TryOutput:
         return try_xpath(body.serp_id, body.feature_type, body.xpath)
     except (InvalidXPathError, InvalidMarkError) as e:
         raise HTTPException(status_code=422, detail=str(e))
+
+
+# the candidates to reuse: GET /parsers?provider_id=f205…&feature_type=knowledge_panel
+@router.get("")
+def list_all(provider_id: str, feature_type: str | None = None) -> list[ParserOutput]:
+    return list_parsers(provider_id, feature_type)
 
 
 @router.post("", status_code=201)
