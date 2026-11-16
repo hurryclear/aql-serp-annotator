@@ -21,3 +21,14 @@ export async function getAnnotation(serpId: string): Promise<AnnotationOutput> {
   const response = await apiClient.get<AnnotationOutput>(`/annotations/${serpId}`);
   return response.data;
 }
+
+// the editor's Save changes: the whole new list replaces the old one
+export async function replaceAnnotation(serpId: string, features: FeatureInput[]): Promise<AnnotationOutput> {
+  const response = await apiClient.put<AnnotationOutput>(`/annotations/${serpId}`, { features });
+  return response.data;
+}
+
+export async function setGroundTruth(serpId: string, groundTruth: boolean): Promise<AnnotationOutput> {
+  const response = await apiClient.patch<AnnotationOutput>(`/annotations/${serpId}`, { ground_truth: groundTruth });
+  return response.data;
+}
