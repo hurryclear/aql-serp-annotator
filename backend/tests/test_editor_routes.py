@@ -66,5 +66,10 @@ def test_groups_are_ordered_by_provider_then_year(client):
     assert keys == sorted(keys)
 
 
+def test_list_one_group(client):
+    rows = client.get("/annotations", params={"provider_id": RECORD["provider"], "year": RECORD["year"]}).json()
+    assert [(r["serp_id"], r["feature_count"]) for r in rows] == [(str(SERP_ID), 2)]
+
+
 def test_unknown_serp_is_404(client):
     assert client.get("/annotations/00000000-0000-0000-0000-000000000000").status_code == 404

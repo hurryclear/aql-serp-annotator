@@ -8,6 +8,7 @@ from src.entities.feature import Feature
 from src.annotation.models import (
     AnnotationGroup,
     AnnotationOutput,
+    AnnotationSummary,
     FeatureInput,
     FeatureOutput,
 )
@@ -150,6 +151,32 @@ def list_groups() -> list[AnnotationGroup]:
             counts.items(), key=lambda item: (_provider_name(item[0][0]), item[0][1])
         )
     ]
+
+
+def list_annotations(provider_id: str, year: int) -> list[AnnotationSummary]:
+    """The annotated SERPs of one group, oldest annotation first."""
+    with SessionLocal() as session:
+        annotations = (
+            session.query(Annotation)
+            .filter_by(provider=provider_id, year=year)
+            .order_by(Annotation.created_at)
+            .all()
+        )
+        feature_counts = Counter(
+            row.serp_id
+            for row in session.query(Feature.serp_id).filter(
+                Feature.serp_id.in_([a.serp_id for a in annotations])
+            )
+        )
+        return [
+            AnnotationSummary(
+                serp_id=a.serp_id,
+                created_by=a.created_by,
+                ground_truth=a.ground_truth,
+                feature_count=feature_counts[a.serp_id],
+            )
+            for a in annotations
+        ]
 
 
 def _features_in_page_order(serp_id: UUID, rows: list[Feature]) -> list[FeatureOutput]:

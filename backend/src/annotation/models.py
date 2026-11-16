@@ -35,6 +35,14 @@ class AnnotationOutput(BaseModel):
     features: list[FeatureOutput]  # in page order
 
 
+# one row of GET /annotations?provider_id=…&year=…
+class AnnotationSummary(BaseModel):
+    serp_id: UUID
+    created_by: str
+    ground_truth: bool
+    feature_count: int
+
+
 # one row of GET /annotations/groups
 class AnnotationGroup(BaseModel):
     provider_id: str

@@ -6,10 +6,12 @@ from src.annotation.models import (
     AnnotationGroup,
     AnnotationInput,
     AnnotationOutput,
+    AnnotationSummary,
 )
 from src.annotation.service import (
     create_annotation,
     get_annotation,
+    list_annotations,
     list_groups,
 )
 from exceptions import (
@@ -41,6 +43,12 @@ def create(annotation: AnnotationInput) -> None:
 @router.get("/groups")
 def groups() -> list[AnnotationGroup]:
     return list_groups()
+
+
+# the editor's group page: GET /annotations?provider_id=f205…&year=2023
+@router.get("")
+def list_all(provider_id: str, year: int) -> list[AnnotationSummary]:
+    return list_annotations(provider_id, year)
 
 
 @router.get("/{serp_id}")
