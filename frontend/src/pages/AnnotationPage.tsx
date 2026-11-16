@@ -21,7 +21,7 @@ import { findMarkedElement, injectOutlineStyles, markAccepted, unmarkAccepted } 
 import { shortcutFor, type ShortcutAction } from "../workspace/shortcuts";
 import type { AcceptedBlock, FeatureInput, FeatureType, WorkspaceState } from "../types/workspace";
 
-// the SERP ids only arrive as router state from the landing page; a reload or a
+// the SERP ids only arrive as router state from the start page; a reload or a
 // pasted URL loses them (ADR 0005), so there's nothing to annotate
 function AnnotationPage() {
   const location = useLocation();
@@ -32,7 +32,7 @@ function AnnotationPage() {
       <CenteredCard>
         <Typography variant="body1" color="text.secondary">
           This batch isn't open in this tab anymore. Start a new one from the{" "}
-          <Link component={RouterLink} to="/">landing page</Link>.
+          <Link component={RouterLink} to="/">start page</Link>.
         </Typography>
       </CenteredCard>
     );

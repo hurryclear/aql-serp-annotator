@@ -46,7 +46,7 @@ function ParserPage() {
     return (
       <CenteredCard>
         <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>This group has no annotations.</Typography>
-        <Button variant="outlined" fullWidth onClick={() => navigate("/editor")}>Back to groups</Button>
+        <Button variant="outlined" fullWidth onClick={() => navigate("/")}>Back to start</Button>
       </CenteredCard>
     );
   }
@@ -62,8 +62,8 @@ function ParserPage() {
         year={Number(year)}
         onPrev={() => setPosition((p) => p - 1)}
         onNext={() => setPosition((p) => p + 1)}
-        onExit={() => navigate("/editor")}
-        exitLabel="Back to groups"
+        onExit={() => navigate("/")}
+        exitLabel="Back to start"
       />
       {/* keyed by SERP: every SERP starts fresh, with its own page, annotation and result */}
       <ParserSession key={serpId} serpId={serpId} providerId={providerId} labels={labels} />

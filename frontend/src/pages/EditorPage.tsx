@@ -52,7 +52,7 @@ function EditorPage() {
     return (
       <CenteredCard>
         <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>This group has no annotations.</Typography>
-        <Button variant="outlined" fullWidth onClick={() => navigate("/editor")}>Back to groups</Button>
+        <Button variant="outlined" fullWidth onClick={() => navigate("/")}>Back to start</Button>
       </CenteredCard>
     );
   }
@@ -68,8 +68,8 @@ function EditorPage() {
         year={Number(year)}
         onPrev={() => move(() => setPosition((p) => p - 1))}
         onNext={() => move(() => setPosition((p) => p + 1))}
-        onExit={() => move(() => navigate("/editor"))}
-        exitLabel="Back to groups"
+        onExit={() => move(() => navigate("/"))}
+        exitLabel="Back to start"
       />
       {/* keyed by SERP: every SERP starts from its saved state */}
       <EditorSession key={serpId} serpId={serpId} featureTypes={featureTypes} onDirtyChange={setDirty} />

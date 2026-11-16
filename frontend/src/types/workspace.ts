@@ -1,4 +1,4 @@
-// the landing page's choices, as GET /serps expects them
+// the start page's choices, as GET /serps expects them
 export type SerpQuery = {
   provider: string;
   language: string;
@@ -11,7 +11,7 @@ export type SerpSummary = {
   query: string;
 };
 
-// handed from the landing page to /workspace as router state
+// handed from the start page to /workspace as router state
 export type WorkspaceState = SerpQuery & {
   serpIds: string[];
   createdBy: string;
