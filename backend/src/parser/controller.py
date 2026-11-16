@@ -3,17 +3,19 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException
 
 from src.parser.models import (
+    LinkOutput,
     ParserInput,
     ParserOutput,
     TryInput,
     TryOutput,
 )
-from src.parser.service import create_parser, try_xpath
+from src.parser.service import create_parser, link_parser, try_xpath
 from exceptions import (
     AnnotationNotFoundError,
     InvalidMarkError,
     InvalidXPathError,
     ParserFindsNothingError,
+    ParserNotFoundError,
 )
 
 
@@ -37,6 +39,17 @@ def create(body: ParserInput) -> ParserOutput:
     except AnnotationNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except (InvalidXPathError, InvalidMarkError, ParserFindsNothingError) as e:
+        raise HTTPException(status_code=422, detail=str(e))
+
+
+# "use this parser on this SERP": PUT, because linking twice ends in the same state
+@router.put("/{parser_id}/serps/{serp_id}")
+def link(parser_id: UUID, serp_id: UUID) -> LinkOutput:
+    try:
+        return link_parser(parser_id, serp_id)
+    except (ParserNotFoundError, AnnotationNotFoundError) as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except (InvalidMarkError, ParserFindsNothingError) as e:
         raise HTTPException(status_code=422, detail=str(e))
 
 

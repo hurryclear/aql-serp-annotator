@@ -26,6 +26,10 @@ class SerpHtmlUnavailableError(Exception):
     """The SERP exists, but has no warc_location (not archived to S3 yet)."""
     pass
 
+class ParserNotFoundError(Exception):
+    pass
+
+
 class ParserFindsNothingError(Exception):
     """A parser must find at least one annotated block: its year comes from them."""
     pass

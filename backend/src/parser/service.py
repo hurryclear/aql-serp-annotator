@@ -7,12 +7,17 @@ from src.entities.annotation import Annotation
 from src.entities.feature import Feature
 from src.entities.parser import Parser
 from src.annotation.service import feature_id
-from src.parser.models import ParserOutput, TryOutput
+from src.parser.models import LinkOutput, ParserOutput, TryOutput
 from src.serp.service import get_serp_html
 from utils.html_utils import marked_nodes, xpath_nodes
 
 from namespaces import NAMESPACE_FEATURE_PARSER
-from exceptions import AnnotationNotFoundError, InvalidMarkError, ParserFindsNothingError
+from exceptions import (
+    AnnotationNotFoundError,
+    InvalidMarkError,
+    ParserFindsNothingError,
+    ParserNotFoundError,
+)
 
 
 def _snapshot(serp_id: UUID) -> str:
@@ -132,5 +137,26 @@ def create_parser(serp_id: UUID, feature_type: str, xpath: str) -> ParserOutput:
         _link(session, parser.id, [fid for _, fid in blocks])
         session.commit()
         return _output(session, parser)
+
+
+def link_parser(parser_id: UUID, serp_id: UUID) -> LinkOutput:
+    """Use an existing parser on this SERP: link the blocks of its type that it finds here.
+
+    Raises ParserNotFoundError, AnnotationNotFoundError, ParserFindsNothingError
+    (also when the parser belongs to another provider) and InvalidMarkError.
+    """
+    with SessionLocal() as session:
+        parser = session.get(Parser, parser_id)
+        if parser is None:
+            raise ParserNotFoundError(f"parser {parser_id} does not exist")
+        annotation = _annotation(session, serp_id)
+        if annotation.provider != parser.provider:
+            raise ParserFindsNothingError("this parser belongs to another provider")
+        blocks = _found_blocks(serp_id, parser.feature_type, parser.xpath)
+        if not blocks:
+            raise ParserFindsNothingError("this parser finds none of this SERP's annotated blocks of its type")
+        _link(session, parser.id, [fid for _, fid in blocks])
+        session.commit()
+        return LinkOutput(parser=_output(session, parser), linked=[node for node, _ in blocks])
 
 

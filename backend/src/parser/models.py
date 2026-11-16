@@ -38,3 +38,7 @@ class ParserOutput(BaseModel):
     years: list[int]  # the years of those SERPs: a parser can be reused across years
 
 
+# PUT /parsers/{parser_id}/serps/{serp_id}: link an existing parser to this SERP's blocks
+class LinkOutput(BaseModel):
+    parser: ParserOutput
+    linked: list[int]  # aqlqa-node numbers of the blocks now linked to it

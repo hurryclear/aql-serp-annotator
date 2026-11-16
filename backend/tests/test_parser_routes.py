@@ -107,3 +107,31 @@ def test_a_parser_that_finds_no_annotated_block_here_is_refused(client):
 # ---- reusing an existing parser --------------------------------------------
 
 
+def test_use_an_existing_parser_on_a_serp_of_another_year(client):
+    parser_id = save(client, "//div[@class='kp']").json()["id"]
+    response = use(client, parser_id, SERP_B)
+    assert response.status_code == 200
+    assert response.json()["linked"] == [3]
+    assert sorted(response.json()["parser"]["years"]) == sorted({A["year"], B["year"]})
+    assert parser_of(SERP_B) == UUID(parser_id)
+
+
+def test_using_another_parser_replaces_a_blocks_link(client):
+    first = save(client, "//div[@class='kp']").json()["id"]
+    second = save(client, "//body/div[1]").json()["id"]  # same block, saved as a second parser
+    assert parser_of(SERP_A) == UUID(second)
+    use(client, first, SERP_A)
+    assert parser_of(SERP_A) == UUID(first)
+
+
+def test_use_is_refused_when_the_parser_finds_nothing_or_is_another_providers(client):
+    ad_parser = save(client, "//div[@class='ad']", feature_type="ads").json()["id"]
+    with SessionLocal() as s:  # make it miss on B: its xpath now points nowhere
+        s.get(Parser, UUID(ad_parser)).xpath = "//table"
+        s.commit()
+    assert use(client, ad_parser, SERP_B).status_code == 422
+    kp_parser = save(client, "//div[@class='kp']").json()["id"]
+    response = use(client, kp_parser, SERP_C)
+    assert response.status_code == 422 and "another provider" in response.json()["detail"]
+
+
