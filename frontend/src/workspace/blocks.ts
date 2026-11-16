@@ -9,6 +9,8 @@ const STYLE_ID = "fb-annotation-styles";
 const NODE_ATTR = "aqlqa-node";
 // the same attribute the backend writes into the saved snapshot, shown here right away
 const TYPE_ATTR = "aqlqa-sf-type";
+// parser development: an element the xpath being tried finds
+const PARSED = "aqlqa-sf-parsed";
 
 export type MarkResult = { element: Element; node: number } | { error: string };
 
@@ -61,6 +63,12 @@ export function showSavedBlocks(doc: Document): void {
   });
 }
 
+// parser development: outline exactly the elements an xpath found, nothing else
+export function showParsed(doc: Document, nodes: number[]): void {
+  doc.querySelectorAll(`.${PARSED}`).forEach((element) => element.classList.remove(PARSED));
+  for (const node of nodes) elementByNode(doc, node)?.classList.add(PARSED);
+}
+
 // what gets saved as the feature's content: the block as the SERP had it, without our marks
 export function blockContent(element: Element): string {
   const copy = element.cloneNode(true) as Element;
@@ -86,6 +94,9 @@ export function injectOutlineStyles(doc: Document): void {
     // a small label with the type at the start of each accepted block
     `.${ACCEPTED}[${TYPE_ATTR}]::before { content: attr(${TYPE_ATTR}); display: inline-block;` +
     ` margin: 0 6px 2px 0; padding: 0 5px; border-radius: 3px; background: #4CAF50; color: #fff;` +
-    ` font: 500 11px/1.6 -apple-system, BlinkMacSystemFont, sans-serif; }`;
+    ` font: 500 11px/1.6 -apple-system, BlinkMacSystemFont, sans-serif; }\n` +
+    // parser development: a blue ring around whatever the xpath finds, drawn
+    // outside the green outline so a found annotated block shows both
+    `.${PARSED} { box-shadow: 0 0 0 5px #2775C7 !important; }`;
   doc.head.appendChild(style);
 }

@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { blockContent, findMarkedElement, injectOutlineStyles, markAccepted, showSavedBlocks, unmarkAccepted } from "./blocks";
+import { blockContent, findMarkedElement, injectOutlineStyles, markAccepted, showParsed, showSavedBlocks, unmarkAccepted } from "./blocks";
 
 function docWith(body: string): Document {
   const doc = document.implementation.createHTMLDocument();
@@ -65,6 +65,14 @@ test("injectOutlineStyles is idempotent", () => {
   injectOutlineStyles(doc);
   injectOutlineStyles(doc);
   expect(doc.querySelectorAll("#fb-annotation-styles")).toHaveLength(1);
+});
+
+test("showParsed outlines exactly the found elements, replacing the last result", () => {
+  const doc = docWith('<div aqlqa-node="3">a</div><div aqlqa-node="4">b</div><div aqlqa-node="5">c</div>');
+  showParsed(doc, [3, 5]);
+  expect([...doc.querySelectorAll(".aqlqa-sf-parsed")].map((e) => e.getAttribute("aqlqa-node"))).toEqual(["3", "5"]);
+  showParsed(doc, [4]);
+  expect([...doc.querySelectorAll(".aqlqa-sf-parsed")].map((e) => e.getAttribute("aqlqa-node"))).toEqual(["4"]);
 });
 
 test("showSavedBlocks highlights every typed element in page order", () => {
