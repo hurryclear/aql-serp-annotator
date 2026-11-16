@@ -35,3 +35,10 @@ export type AnnotationOutput = {
   updated_at: string;
   features: FeatureOutput[]; // in page order
 };
+
+// a feature as the editor holds it while you work, not saved yet
+export type EditorBlock = {
+  index: number; // stable key while editing, also written as aqlqa-sf-index
+  type: string;
+  node: number;
+};
