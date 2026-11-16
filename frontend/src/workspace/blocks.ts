@@ -1,12 +1,16 @@
 // Helpers for the feature blocks the annotator marks inside the SERP iframe.
-// The annotator adds "fb-testing" in DevTools; accepting swaps it for "fb-accepted".
+// The annotator adds "aqlqa-sf-testing" in DevTools; accepting swaps it for "aqlqa-sf-accepted".
 
-const TESTING = "fb-testing";
-const ACCEPTED = "fb-accepted";
-const INDEX_ATTR = "data-fb-index";
+const TESTING = "aqlqa-sf-testing";
+const ACCEPTED = "aqlqa-sf-accepted";
+const INDEX_ATTR = "aqlqa-sf-index";
 const STYLE_ID = "fb-annotation-styles";
+// the backend numbers every element of the snapshot; the save sends this number
+const NODE_ATTR = "aqlqa-node";
+// the same attribute the backend writes into the saved snapshot, shown here right away
+const TYPE_ATTR = "aqlqa-sf-type";
 
-export type MarkResult = { element: Element } | { error: string };
+export type MarkResult = { element: Element; node: number } | { error: string };
 
 export function findMarkedElement(doc: Document): MarkResult {
   const marked = doc.querySelectorAll(`.${TESTING}`);
@@ -14,13 +18,20 @@ export function findMarkedElement(doc: Document): MarkResult {
   if (marked.length > 1) return { error: "Mark only one block at a time." };
   const element = marked[0];
   if (element.classList.contains(ACCEPTED)) return { error: "This block is already accepted." };
-  return { element };
+  // only elements from the archived page carry a number; one the browser added
+  // itself (such as <tbody>) doesn't exist in the snapshot, so it can't be saved
+  const node = Number(element.getAttribute(NODE_ATTR));
+  if (!Number.isInteger(node) || node < 1) {
+    return { error: "This element was added by the browser. Mark its parent element instead." };
+  }
+  return { element, node };
 }
 
-export function markAccepted(element: Element, index: number): void {
+export function markAccepted(element: Element, index: number, featureType: string): void {
   element.classList.remove(TESTING);
   element.classList.add(ACCEPTED);
   element.setAttribute(INDEX_ATTR, String(index));
+  element.setAttribute(TYPE_ATTR, featureType);
 }
 
 export function unmarkAccepted(doc: Document, index: number): void {
@@ -28,6 +39,7 @@ export function unmarkAccepted(doc: Document, index: number): void {
   if (!element) return;
   element.classList.remove(ACCEPTED);
   element.removeAttribute(INDEX_ATTR);
+  element.removeAttribute(TYPE_ATTR);
   if (element.classList.length === 0) element.removeAttribute("class");
 }
 
@@ -46,8 +58,12 @@ export function injectOutlineStyles(doc: Document): void {
   if (doc.getElementById(STYLE_ID)) return;
   const style = doc.createElement("style");
   style.id = STYLE_ID;
+  // the old app's highlights: a see-through fill over the whole block plus an outline,
+  // orange while marking, green (and slightly dimmed) once accepted
   style.textContent =
-    `.${TESTING} { outline: 2px solid #EF9F27 !important; outline-offset: 2px; }\n` +
-    `.${ACCEPTED} { outline: 2px dashed #7F77DD !important; outline-offset: 2px; }`;
+    `.${TESTING} { outline: 3px solid #FFA500 !important; outline-offset: 2px;` +
+    ` background-color: rgba(255, 165, 0, 0.1) !important; transition: all 0.3s ease; }\n` +
+    `.${ACCEPTED} { outline: 2px solid #4CAF50 !important; outline-offset: 2px;` +
+    ` background-color: rgba(76, 175, 80, 0.1) !important; opacity: 0.7; transition: all 0.3s ease; }`;
   doc.head.appendChild(style);
 }

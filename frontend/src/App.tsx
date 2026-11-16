@@ -6,7 +6,7 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
-      <Route path="/workspace/:cartId" element={<AnnotationPage />} />
+      <Route path="/workspace" element={<AnnotationPage />} />
     </Routes>
   );
 }

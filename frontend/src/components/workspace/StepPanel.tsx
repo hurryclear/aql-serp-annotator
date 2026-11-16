@@ -11,7 +11,7 @@ import InlineError from "../InlineError";
 import { tokens } from "../../theme";
 import type { AcceptedBlock, FeatureType } from "../../types/workspace";
 
-const MARK_COMMAND = "$0.classList.add('fb-testing')";
+const MARK_COMMAND = "$0.classList.add('aqlqa-sf-testing')";
 
 type StepPanelProps = {
   blockNumber: number;

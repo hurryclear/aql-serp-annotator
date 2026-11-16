@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
-import { Link as RouterLink, useLocation, useNavigate, useParams } from "react-router-dom";
+import { Link as RouterLink, useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -14,33 +14,34 @@ import TopBar from "../components/workspace/TopBar";
 import SerpFrame from "../components/workspace/SerpFrame";
 import StepPanel from "../components/workspace/StepPanel";
 import DoneCard from "../components/workspace/DoneCard";
-import { getFeatureTypes } from "../api/features";
-import { getSerpHtml, saveAnnotation } from "../api/serps";
-import { blockContent, findMarkedElement, injectOutlineStyles, markAccepted, unmarkAccepted } from "../workspace/blocks";
+import { getFeatureTypes } from "../api/featureTypes";
+import { getSerpHtml } from "../api/serps";
+import { createAnnotation } from "../api/annotations";
+import { findMarkedElement, injectOutlineStyles, markAccepted, unmarkAccepted } from "../workspace/blocks";
 import { shortcutFor, type ShortcutAction } from "../workspace/shortcuts";
-import type { AcceptedBlock, AnnotatedFeatureInput, FeatureType, WorkspaceState } from "../types/workspace";
+import type { AcceptedBlock, FeatureInput, FeatureType, WorkspaceState } from "../types/workspace";
 
 // the SERP ids only arrive as router state from the landing page; a reload or a
 // pasted URL loses them (ADR 0005), so there's nothing to annotate
 function AnnotationPage() {
-  const { cartId } = useParams();
-  const state = useLocation().state as WorkspaceState | null;
+  const location = useLocation();
+  const state = location.state as WorkspaceState | null;
 
-  if (!cartId || !state) {
+  if (!state) {
     return (
       <CenteredCard>
         <Typography variant="body1" color="text.secondary">
-          This cart isn't open in this tab anymore. Start a new one from the{" "}
+          This batch isn't open in this tab anymore. Start a new one from the{" "}
           <Link component={RouterLink} to="/">landing page</Link>.
         </Typography>
       </CenteredCard>
     );
   }
-  // keyed by cart: moving between two workspace URLs (e.g. browser Back) starts over at SERP 1
-  return <Workspace key={cartId} cartId={cartId} {...state} />;
+  // keyed by navigation: every Start (or browser Back/Forward) begins again at SERP 1
+  return <Workspace key={location.key} {...state} />;
 }
 
-function Workspace({ cartId, serpIds, provider, language, year }: WorkspaceState & { cartId: string }) {
+function Workspace({ serpIds, createdBy, provider, language, year }: WorkspaceState) {
   const navigate = useNavigate();
   const [position, setPosition] = useState(0);
   const [featureTypes, setFeatureTypes] = useState<FeatureType[]>([]);
@@ -61,7 +62,7 @@ function Workspace({ cartId, serpIds, provider, language, year }: WorkspaceState
       {/* keyed by SERP: React starts a fresh session (empty blocks, no message) for every SERP */}
       <SerpSession
         key={serpId}
-        cartId={cartId}
+        createdBy={createdBy}
         serpId={serpId}
         featureTypes={featureTypes}
         typesError={typesError}
@@ -86,14 +87,14 @@ function listenForShortcuts(target: Window | Document, actionRef: RefObject<(act
 }
 
 type SerpSessionProps = {
-  cartId: string;
+  createdBy: string;
   serpId: string;
   featureTypes: FeatureType[];
   typesError: string | null;
   onDone: () => void;
 };
 
-function SerpSession({ cartId, serpId, featureTypes, typesError, onDone }: SerpSessionProps) {
+function SerpSession({ createdBy, serpId, featureTypes, typesError, onDone }: SerpSessionProps) {
   const [html, setHtml] = useState<string | null>(null);
   const [serpError, setSerpError] = useState<string | null>(null);
   const [selectedType, setSelectedType] = useState<string | null>(null);
@@ -147,9 +148,9 @@ function SerpSession({ cartId, serpId, featureTypes, typesError, onDone }: SerpS
       setMessage("Choose a category first.");
       return;
     }
-    markAccepted(result.element, nextIndex);
+    markAccepted(result.element, nextIndex, selectedType);
     const label = featureTypes.find((type) => type.id === selectedType)?.label ?? selectedType;
-    setAccepted([...accepted, { index: nextIndex, type: selectedType, label, content: blockContent(result.element) }]);
+    setAccepted([...accepted, { index: nextIndex, type: selectedType, label, node: result.node }]);
     setSelectedType(null);
     setMessage(null);
   }
@@ -160,12 +161,12 @@ function SerpSession({ cartId, serpId, featureTypes, typesError, onDone }: SerpS
   }
 
   // save this SERP's annotation, then move on; on failure keep everything and stay
-  async function submit(features: AnnotatedFeatureInput[]) {
+  async function submit(features: FeatureInput[]) {
     busyRef.current = true;
     setBusy(true);
     setMessage(null);
     try {
-      await saveAnnotation(serpId, cartId, features);
+      await createAnnotation(serpId, createdBy, features);
       onDone();
     } catch (error) {
       // already annotated (e.g. in another tab): nothing left to do here
@@ -183,7 +184,7 @@ function SerpSession({ cartId, serpId, featureTypes, typesError, onDone }: SerpS
       setMessage("No blocks accepted. Use No blocks if this SERP has none.");
       return;
     }
-    submit(accepted.map((block) => ({ type: block.type, content: block.content, xpath: null })));
+    submit(accepted.map((block) => ({ feature_type: block.type, node: block.node })));
   }
 
   function handleNoBlocks() {
@@ -192,7 +193,7 @@ function SerpSession({ cartId, serpId, featureTypes, typesError, onDone }: SerpS
     else submit([]);
   }
 
-  // saves nothing, so this SERP can come back in a later cart
+  // saves nothing, so this SERP can come back in a later batch
   function handleSkip() {
     if (busyRef.current) return;
     onDone();

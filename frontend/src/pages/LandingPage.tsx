@@ -6,7 +6,7 @@ import Stack from "@mui/material/Stack";
 import Button from "@mui/material/Button";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { useNavigate } from "react-router-dom";
-import { createCart } from "../api/carts";
+import { listSerps } from "../api/serps";
 import Selector from "../components/Selector";
 import CenteredCard from "../components/CenteredCard";
 import Field from "../components/Field";
@@ -15,8 +15,11 @@ import { missingFields, type CartForm } from "./landingForm";
 import type { WorkspaceState } from "../types/workspace";
 
 const PROVIDERS = ["Google", "Baidu", "Yahoo", "360", "Bing", "Naver", "Yandex", "Sogou", "Daum", "Ask.com", "Rambler", "Seznam", "Ecosia", "Goo"];
-const LANGUAGES = ["Arabic", "Bengali", "German", "English", "Spanish", "French", "Indonesian", "Portuguese", "Russian", "Chinese"];
-const YEARS = ["2010", "2011", "2012", "2013"];
+// still hardcoded copies of resources/ (see "One source of truth" in docs/planned-features.md);
+// the backend turns "Simplified Chinese" into the file's "simplified_chinese"
+const LANGUAGES = ["Arabic", "Bengali", "German", "English", "Spanish", "French", "Hindi", "Indonesian", "Korean", "Portuguese", "Russian", "Urdu", "Simplified Chinese", "Traditional Chinese"];
+// newest first: most question SERPs are from 2017 on
+const YEARS = Array.from({ length: 2026 - 1999 + 1 }, (_, i) => String(2026 - i));
 
 const EMPTY_FORM: CartForm = { provider: "", language: "", year: "", createdBy: "" };
 
@@ -42,23 +45,22 @@ function LandingPage() {
     }
     setBusy(true);
     try {
-      const year = Number(form.year);
-      const result = await createCart({
-        provider: form.provider,
-        language: form.language,
-        year,
-        created_by: form.createdBy.trim(),
-        batch_size: 25,
-      });
-      if (result.id == null) {
+      const query = { provider: form.provider, language: form.language, year: Number(form.year) };
+      const serps = await listSerps(query);
+      if (serps.length === 0) {
         setError("No SERPs match these choices. Try a different year.");
         return;
       }
-      // the SERP ids only live in the browser (ADR 0005), so they travel with the navigation
-      const state: WorkspaceState = { serpIds: result.serp_ids, provider: form.provider, language: form.language, year };
-      navigate(`/workspace/${result.id}`, { state });
+      // the batch only lives in the browser (ADR 0005), so it travels with the navigation;
+      // the name isn't sent yet: the backend first sees it on Save, as created_by
+      const state: WorkspaceState = {
+        ...query,
+        serpIds: serps.map((serp) => serp.serp_id),
+        createdBy: form.createdBy.trim(),
+      };
+      navigate("/workspace", { state });
     } catch {
-      setError("Couldn't create a cart. Check that the backend is running, then try again.");
+      setError("Couldn't load SERPs. Check that the backend is running, then try again.");
     } finally {
       setBusy(false);
     }

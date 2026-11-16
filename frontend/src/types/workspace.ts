@@ -1,9 +1,20 @@
-// handed from the landing page to /workspace/:cartId as router state
-export type WorkspaceState = {
-  serpIds: string[];
+// the landing page's choices, as GET /serps expects them
+export type SerpQuery = {
   provider: string;
   language: string;
   year: number;
+};
+
+// one item of GET /serps
+export type SerpSummary = {
+  serp_id: string;
+  query: string;
+};
+
+// handed from the landing page to /workspace as router state
+export type WorkspaceState = SerpQuery & {
+  serpIds: string[];
+  createdBy: string;
 };
 
 export type FeatureType = {
@@ -16,12 +27,11 @@ export type AcceptedBlock = {
   index: number;
   type: string;
   label: string;
-  content: string;
+  node: number; // the element's aqlqa-node number in the snapshot
 };
 
-// one feature as POST /serps/{id}/annotation expects it
-export type AnnotatedFeatureInput = {
-  type: string;
-  content: string;
-  xpath: string | null;
+// one feature as POST /annotations expects it
+export type FeatureInput = {
+  feature_type: string;
+  node: number;
 };
