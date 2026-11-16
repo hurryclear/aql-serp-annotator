@@ -11,6 +11,12 @@ export type SerpSummary = {
   query: string;
 };
 
+// GET /serps/count: question SERPs for these choices, and how many are already annotated
+export type SerpCount = {
+  total: number;
+  annotated: number;
+};
+
 // handed from the start page to /workspace as router state
 export type WorkspaceState = SerpQuery & {
   serpIds: string[];

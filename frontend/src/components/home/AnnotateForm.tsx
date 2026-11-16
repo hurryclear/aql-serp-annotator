@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import OutlinedInput from "@mui/material/OutlinedInput";
@@ -6,12 +6,12 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { useNavigate } from "react-router-dom";
-import { listSerps } from "../../api/serps";
+import { countSerps, listSerps } from "../../api/serps";
 import Selector from "../Selector";
 import Field from "../Field";
 import InlineError from "../InlineError";
-import { missingFields, type CartForm } from "./landingForm";
-import type { WorkspaceState } from "../../types/workspace";
+import { countMessage, missingFields, type CartForm } from "./landingForm";
+import type { SerpCount, WorkspaceState } from "../../types/workspace";
 
 const PROVIDERS = ["Google", "Baidu", "Yahoo", "360", "Bing", "Naver", "Yandex", "Sogou", "Daum", "Ask.com", "Rambler", "Seznam", "Ecosia", "Goo"];
 // still hardcoded copies of resources/ (see "One source of truth" in docs/planned-features.md);
@@ -31,6 +31,33 @@ function AnnotateForm({ form, onFormChange }: AnnotateFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const navigate = useNavigate();
+  // the last count the backend sent, with the choices it was for: when a dropdown
+  // changes, the key no longer matches and the old number stops showing by itself
+  const choicesKey = `${form.provider}|${form.language}|${form.year}`;
+  const [counted, setCounted] = useState<{ key: string; count: SerpCount | "failed" } | null>(null);
+
+  // look the count up again whenever one of the three dropdowns changes (not the name);
+  // empty dropdowns count too: nothing chosen yet shows every question SERP
+  useEffect(() => {
+    const key = `${form.provider}|${form.language}|${form.year}`;
+    // switching dropdowns quickly sends several requests; only the latest one may show
+    let stale = false;
+    countSerps({
+      provider: form.provider || undefined,
+      language: form.language || undefined,
+      year: form.year ? Number(form.year) : undefined,
+    })
+      .then((count) => { if (!stale) setCounted({ key, count }); })
+      .catch(() => { if (!stale) setCounted({ key, count: "failed" }); });
+    return () => { stale = true; };
+  }, [form.provider, form.language, form.year]);
+
+  const count = counted?.key === choicesKey ? counted.count : null;
+  const countText = count === null
+    ? "Counting SERPs…"
+    : count === "failed"
+      ? "Couldn't count the SERPs."
+      : countMessage(count);
 
   // editing a field clears its red outline and any message under the button
   function update(field: keyof CartForm, value: string) {
@@ -88,7 +115,10 @@ function AnnotateForm({ form, onFormChange }: AnnotateFormProps) {
           />
         </Field>
       </Stack>
-      <Typography variant="caption" color="text.disabled" component="p" sx={{ mt: 1.5 }}>
+      <Typography variant="body2" color="text.secondary" component="p" sx={{ mt: 2 }} aria-live="polite">
+        {countText}
+      </Typography>
+      <Typography variant="caption" color="text.disabled" component="p" sx={{ mt: 0.5 }}>
         You'll get up to 25 SERPs you haven't annotated yet.
       </Typography>
       <Button variant="contained" fullWidth endIcon={<ArrowForwardIcon />} onClick={handleSubmit} disabled={busy} sx={{ mt: 1.5 }}>

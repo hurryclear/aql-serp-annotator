@@ -1,5 +1,12 @@
-import type { SerpSummary, SerpQuery } from "../types/workspace";
+import type { SerpCount, SerpSummary, SerpQuery } from "../types/workspace";
 import { apiClient } from "./client";
+
+// the line above the Start button: how many SERPs these choices find;
+// a choice left undefined isn't sent, and the backend then counts every value of it
+export async function countSerps(query: Partial<SerpQuery>): Promise<SerpCount> {
+  const response = await apiClient.get<SerpCount>("/serps/count", { params: query });
+  return response.data;
+}
 
 // the Start button: candidate SERPs for these choices that nobody has annotated yet
 export async function listSerps(query: SerpQuery): Promise<SerpSummary[]> {
