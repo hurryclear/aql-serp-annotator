@@ -2,8 +2,8 @@ class AnnotationExistsError(Exception):
     pass
 
 
-class CartNotFoundError(Exception):
-    """The cart_id an annotation points at doesn't exist."""
+class SerpNotQuestionSerpError(Exception):
+    """The serp_id isn't in the question SERPs file, so it can't be annotated."""
     pass
 
 

@@ -1,69 +1,78 @@
 """save human annotations of SERPs"""
-from datetime import datetime, UTC
+from collections import Counter
 from uuid import UUID, uuid5
-from hashlib import sha256
 
 from src.database.core import SessionLocal
 from src.entities.annotation import Annotation
 from src.entities.feature import Feature
+from src.annotation.models import FeatureInput
+from src.serp.service import get_question_serp_by_id
 
 from namespaces import NAMESPACE_FEATURE
-from exceptions import AnnotationExistsError, CartNotFoundError
+from exceptions import AnnotationExistsError, SerpNotQuestionSerpError
 
 
-def save_annotation(
+def feature_id(serp_id: UUID, feature_type: str, n: int) -> UUID:
+    """Deterministic id: the n-th block of this type on this SERP always gets the same id."""
+    return uuid5(NAMESPACE_FEATURE, f"{serp_id}:{feature_type}:{n}")
+
+
+def build_features(serp_id: UUID, input_features: list[FeatureInput]) -> list[Feature]:
+    """Turn the browser's list into Feature rows, numbering each type 1, 2, 3, ...
+
+    For now n follows the order the blocks were sent in: the browser doesn't
+    say yet where on the page each block is.
+    """
+    seen: Counter[str] = Counter()
+    features = []
+    for input_feature in input_features:
+        seen[input_feature.feature_type] += 1
+        n = seen[input_feature.feature_type]
+        features.append(
+            Feature(
+                id=feature_id(serp_id, input_feature.feature_type, n),
+                serp_id=serp_id,
+                feature_type=input_feature.feature_type,
+                parser_id=None,  # filled in later, during parser development
+            )
+        )
+    return features
+
+
+def create_annotation(
     serp_id: UUID,
-    cart_id: UUID,
-    overwrite: bool = False,
+    created_by: str,
+    input_features: list[FeatureInput],
 ) -> None:
     """Record a human annotation of one SERP.
 
-    Each input feature is stored once as a Feature (deduped by a hash of
-    type+content) and linked to this SERP via an AnnotatedFeature carrying
-    its xpath. A single Annotation row marks the SERP as done; if one
-    already exists, raises AnnotationExistsError unless overwrite=True, in
-    which case the SERP's prior feature links are replaced. Raises
-    CartNotFoundError if cart_id doesn't exist.
+    Writes one Annotation row (provider/language/year come from the question
+    SERPs file, not from the browser) and one Feature row per block. An empty
+    feature list is valid: it means "this SERP has no features".
+
+    Raises SerpNotQuestionSerpError if the SERP isn't in the question file, and
+    AnnotationExistsError if it's already annotated.
     """
-    # with SessionLocal() as session:
-    #     if session.get(Cart, cart_id) is None:
-    #         raise CartNotFoundError(f"cart {cart_id} does not exist")
+    serp = get_question_serp_by_id(serp_id)
+    if serp is None:
+        raise SerpNotQuestionSerpError(f"{serp_id} is not a question SERP")
 
-    #     existing = session.get(Annotation, serp_id)
+    with SessionLocal() as session:
+        if session.get(Annotation, serp_id) is not None:
+            raise AnnotationExistsError(f"{serp_id} is already annotated")
 
-    #     if existing is not None and not overwrite:
-    #         raise AnnotationExistsError(f"{serp_id} is already annotated")
+        session.add(
+            Annotation(
+                serp_id=serp_id,
+                provider=serp.provider,
+                language=serp.language,
+                year=serp.year,
+                created_by=created_by,
+            )
+        )
+        # without relationship() SQLAlchemy doesn't know the annotation row must
+        # be inserted before the features pointing at it, so insert it now
+        session.flush()
 
-    #     if existing is None:
-    #         session.add(Annotation(serp_id=serp_id, cart_id=cart_id))
-    #     else:
-    #         existing.updated_at = datetime.now(UTC)
-    #         session.query(AnnotatedFeature).filter_by(annotated_serp_id=serp_id).delete()
-
-    #     for input_feature in input_features:
-    #         feature_id = uuid5(
-    #             NAMESPACE_FEATURE,
-    #             f"{serp_id}:{input_feature.type}:{sha256(input_feature.content.encode()).hexdigest()}",
-    #         )
-    #         feature = session.get(Feature, feature_id)
-    #         if feature is None:
-    #             feature = Feature(
-    #                 id=feature_id,
-    #                 type=input_feature.type,
-    #                 content=input_feature.content,
-    #             )
-    #             session.add(feature)
-    #             # without relationship() SQLAlchemy doesn't know Feature must be
-    #             # inserted before the AnnotatedFeature pointing at it, so do it now
-    #             session.flush()
-
-    #         session.add(
-    #             AnnotatedFeature(
-    #                 feature_id=feature_id,
-    #                 annotated_serp_id=serp_id,
-    #                 xpath=input_feature.xpath,
-    #             )
-    #         )
-    #     session.commit()
-
-    return None
+        session.add_all(build_features(serp_id, input_features))
+        session.commit()
