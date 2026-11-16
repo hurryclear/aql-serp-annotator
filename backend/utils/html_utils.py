@@ -1,9 +1,61 @@
 import logging
 import re
 
+import lxml.html
 from lxml import etree
 
+from exceptions import InvalidMarkError
+
 logger = logging.getLogger(__name__)
+
+
+# our own attributes in a snapshot, prefixed with the project name so they never
+# clash with the SERP's own attributes
+NODE_ATTR = "aqlqa-node"     # every element's number, written once when the snapshot is cached
+TYPE_ATTR = "aqlqa-sf-type"  # on a marked element: its feature type
+# No feature id in the page: the n-th element (in page order) with
+# aqlqa-sf-type="T" is the Feature row with feature_type T and id
+# uuid5(serp_id:T:n), so the id can always be recomputed from the page.
+
+
+def _parse(html_str: str) -> etree._Element:
+    # bytes + explicit encoding: lxml refuses str input that carries an
+    # <?xml encoding=...?> declaration, which some archived pages have
+    parser = lxml.html.HTMLParser(encoding="utf-8")
+    return lxml.html.document_fromstring(html_str.encode("utf-8"), parser=parser)
+
+
+def _serialize(root: etree._Element) -> str:
+    return etree.tostring(root.getroottree(), method="html", encoding="unicode")
+
+
+def number_elements(html_str: str) -> str:
+    """Give every element a unique aqlqa-node number, 1, 2, 3, ... in document order.
+
+    The numbers are stored in the snapshot, so the browser can read the number off
+    the element the annotator marked and the backend finds the very same element
+    later, even where the browser's DOM differs from lxml's (e.g. added <tbody>).
+    """
+    root = _parse(html_str)
+    for number, element in enumerate(root.iter(etree.Element), start=1):
+        element.set(NODE_ATTR, str(number))
+    return _serialize(root)
+
+
+def mark_features(html_str: str, marks: list[tuple[int, str]]) -> str:
+    """Write aqlqa-sf-type onto the elements with these numbers.
+
+    marks: (node number, feature type) per feature. Raises InvalidMarkError if
+    a number isn't in the snapshot.
+    """
+    root = _parse(html_str)
+    by_number = {element.get(NODE_ATTR): element for element in root.iter(etree.Element)}
+    for node, feature_type in marks:
+        element = by_number.get(str(node))
+        if element is None:
+            raise InvalidMarkError(f"element {node} is not in this SERP's snapshot")
+        element.set(TYPE_ATTR, feature_type)
+    return _serialize(root)
 
 
 _POPUP_HIDER_CSS = """

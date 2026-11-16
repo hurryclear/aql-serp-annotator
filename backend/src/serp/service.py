@@ -3,6 +3,7 @@ import random
 from uuid import UUID
 
 from config import config
+from utils.html_utils import NODE_ATTR, clean_serp_html, number_elements
 from utils.resource_json_loader import PROVIDERS, LANGUAGES
 
 from src.database.core import SessionLocal
@@ -10,6 +11,12 @@ from src.serp.model import Serp, SerpSimple
 from src.entities.annotation import Annotation
 
 from exceptions import UnknownOptionError
+
+
+def build_snapshot(raw_html: str, capture_url: str) -> str:
+    """The snapshot of an archived SERP: cleaned for display, every element numbered."""
+    return number_elements(clean_serp_html(raw_html, base_url=capture_url))
+
 
 def save_serp_html(serp_id: UUID, html: str) -> None:
     serp_path = config.persistence.serp_path / f"{serp_id}.html"
@@ -20,7 +27,12 @@ def get_serp_html(serp_id: UUID) -> str | None:
     serp_path = config.persistence.serp_path / f"{serp_id}.html"
     if not serp_path.exists():
         return None
-    return serp_path.read_text(encoding="utf-8")
+    html = serp_path.read_text(encoding="utf-8")
+    # cached before elements were numbered: number it now, once, so it can be marked
+    if NODE_ATTR not in html:
+        html = number_elements(html)
+        save_serp_html(serp_id, html)
+    return html
 
 
 def _to_serp(record: dict) -> Serp:

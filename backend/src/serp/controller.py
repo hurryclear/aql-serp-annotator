@@ -8,9 +8,8 @@ from fastapi.responses import HTMLResponse
 
 from aql.client import fetch_serp_html
 from src.serp.model import SerpSimple
-from src.serp.service import get_serp_html, save_serp_html, list_serps
+from src.serp.service import build_snapshot, get_serp_html, save_serp_html, list_serps
 
-from utils.html_utils import clean_serp_html
 from exceptions import (
     SerpNotFoundError,
     SerpHtmlUnavailableError,
@@ -58,6 +57,7 @@ def get_serp(serp_id: UUID, raw: bool = False) -> HTMLResponse:
     if raw:
         return HTMLResponse(html)
 
-    cleaned = clean_serp_html(html, base_url=capture_url)
-    save_serp_html(serp_id, cleaned)
-    return HTMLResponse(cleaned)
+    # cleaned and numbered once, here; the saved snapshot is what everyone works on
+    snapshot = build_snapshot(html, capture_url)
+    save_serp_html(serp_id, snapshot)
+    return HTMLResponse(snapshot)

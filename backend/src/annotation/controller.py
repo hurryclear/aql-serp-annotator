@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 
 from src.annotation.models import AnnotationInput
 from src.annotation.service import create_annotation
-from exceptions import AnnotationExistsError, SerpNotQuestionSerpError
+from exceptions import AnnotationExistsError, InvalidMarkError, SerpNotQuestionSerpError
 
 
 router = APIRouter(prefix="/annotations", tags=["annotations"])
@@ -18,3 +18,5 @@ def create(annotation: AnnotationInput) -> None:
         raise HTTPException(status_code=409, detail=f"SERP {annotation.serp_id} is already annotated")
     except SerpNotQuestionSerpError:
         raise HTTPException(status_code=404, detail=f"SERP {annotation.serp_id} is not a question SERP")
+    except InvalidMarkError as e:
+        raise HTTPException(status_code=422, detail=str(e))

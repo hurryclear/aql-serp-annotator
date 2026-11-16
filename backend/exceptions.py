@@ -2,6 +2,11 @@ class AnnotationExistsError(Exception):
     pass
 
 
+class InvalidMarkError(Exception):
+    """A feature's marked element can't be written into the SERP's snapshot."""
+    pass
+
+
 class SerpNotQuestionSerpError(Exception):
     """The serp_id isn't in the question SERPs file, so it can't be annotated."""
     pass
