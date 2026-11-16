@@ -19,5 +19,5 @@ LANGUAGES: dict[str, str] = {
     language["name"]: language["code"] for language in read_json("languages.json")["languages"]
 }
 
-# the full entries (id, label, description, remark), for GET /features/type
+# the full entries (id, label, description, remark), for GET /feature-types
 FEATURE_TYPES: list[dict] = read_json("serp_features_taxonomy.json")["categories"]
