@@ -4,7 +4,7 @@ import re
 import lxml.html
 from lxml import etree
 
-from exceptions import InvalidMarkError
+from exceptions import InvalidMarkError, InvalidXPathError
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +40,28 @@ def number_elements(html_str: str) -> str:
     for number, element in enumerate(root.iter(etree.Element), start=1):
         element.set(NODE_ATTR, str(number))
     return _serialize(root)
+
+
+def xpath_nodes(html_str: str, xpath: str) -> list[int]:
+    """The aqlqa-node numbers of the elements an xpath finds, in page order.
+
+    Runs on the whole document, so //div and /html/body/... both work. Only
+    elements count: an xpath that returns text or attributes finds nothing.
+    Raises InvalidXPathError, with lxml's message, for an xpath that can't run.
+    """
+    root = _parse(html_str)
+    try:
+        results = root.getroottree().xpath(xpath)
+    except etree.XPathError as e:
+        raise InvalidXPathError(f"{e}: {xpath}") from e
+    if not isinstance(results, list):  # count(...), boolean(...): a number, not elements
+        return []
+    numbers = {
+        int(r.get(NODE_ATTR))
+        for r in results
+        if isinstance(r, etree._Element) and r.get(NODE_ATTR) is not None
+    }
+    return sorted(numbers)
 
 
 def marked_nodes(html_str: str) -> list[tuple[int, str]]:

@@ -26,6 +26,11 @@ class SerpHtmlUnavailableError(Exception):
     """The SERP exists, but has no warc_location (not archived to S3 yet)."""
     pass
 
+class InvalidXPathError(Exception):
+    """An xpath that lxml can't run (a syntax error, an unknown function)."""
+    pass
+
+
 class UnknownOptionError(Exception):
     """The user provided an unknown option (e.g. provider, language, year)."""
     pass

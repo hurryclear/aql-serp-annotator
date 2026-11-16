@@ -2,8 +2,8 @@ import re
 
 import pytest
 
-from exceptions import InvalidMarkError
-from utils.html_utils import clean_serp_html, mark_features, number_elements
+from exceptions import InvalidMarkError, InvalidXPathError
+from utils.html_utils import clean_serp_html, mark_features, number_elements, xpath_nodes
 
 
 def test_strips_handler_whose_value_contains_the_other_quote():
@@ -35,3 +35,14 @@ def test_mark_features_refuses_an_unknown_number():
     numbered = number_elements("<html><body><div>a</div></body></html>")
     with pytest.raises(InvalidMarkError):
         mark_features(numbered, [(99, "knowledge_panel")])
+
+
+def test_xpath_nodes_returns_the_numbers_of_the_elements_it_finds():
+    numbered = number_elements('<html><body><div class="a">x</div><p>y</p><div class="a">z</div></body></html>')
+    assert xpath_nodes(numbered, "//div[@class='a']") == [3, 5]
+    assert xpath_nodes(numbered, "//div/text()") == []  # text isn't an element
+
+
+def test_xpath_nodes_refuses_an_invalid_xpath():
+    with pytest.raises(InvalidXPathError):
+        xpath_nodes(number_elements("<html><body></body></html>"), "//div[")
