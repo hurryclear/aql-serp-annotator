@@ -53,6 +53,14 @@ export function setBlockType(doc: Document, index: number, featureType: string):
   doc.querySelector(`[${INDEX_ATTR}="${index}"]`)?.setAttribute(TYPE_ATTR, featureType);
 }
 
+// the editor and parser development: highlight a saved annotation's blocks
+// (every element the snapshot marks with a type) as accepted, numbered in page order
+export function showSavedBlocks(doc: Document): void {
+  doc.querySelectorAll(`[${TYPE_ATTR}]`).forEach((element, i) => {
+    markAccepted(element, i + 1, element.getAttribute(TYPE_ATTR) ?? "");
+  });
+}
+
 // what gets saved as the feature's content: the block as the SERP had it, without our marks
 export function blockContent(element: Element): string {
   const copy = element.cloneNode(true) as Element;

@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { blockContent, findMarkedElement, injectOutlineStyles, markAccepted, unmarkAccepted } from "./blocks";
+import { blockContent, findMarkedElement, injectOutlineStyles, markAccepted, showSavedBlocks, unmarkAccepted } from "./blocks";
 
 function docWith(body: string): Document {
   const doc = document.implementation.createHTMLDocument();
@@ -65,4 +65,11 @@ test("injectOutlineStyles is idempotent", () => {
   injectOutlineStyles(doc);
   injectOutlineStyles(doc);
   expect(doc.querySelectorAll("#fb-annotation-styles")).toHaveLength(1);
+});
+
+test("showSavedBlocks highlights every typed element in page order", () => {
+  const doc = docWith('<div aqlqa-sf-type="kp">a</div><p>x</p><div aqlqa-sf-type="ads">b</div>');
+  showSavedBlocks(doc);
+  const accepted = [...doc.querySelectorAll(".aqlqa-sf-accepted")];
+  expect(accepted.map((e) => [e.getAttribute("aqlqa-sf-index"), e.getAttribute("aqlqa-sf-type")])).toEqual([["1", "kp"], ["2", "ads"]]);
 });
