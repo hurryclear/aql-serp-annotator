@@ -1,7 +1,7 @@
-import MenuItem from '@mui/material/MenuItem';
-import Select, { type SelectChangeEvent } from '@mui/material/Select';
+import Autocomplete from '@mui/material/Autocomplete';
+import TextField from '@mui/material/TextField';
 import Field from './Field';
-import { tokens } from '../theme';
+import { rankOptions } from './rankOptions';
 
 interface SelectorProps {
     label: string;
@@ -11,27 +11,24 @@ interface SelectorProps {
     error?: boolean;
 }
 
+// A dropdown you can also type into: typing filters the options ("goo" → Google,
+// "202" → the 2020s). Only listed options can be chosen, so a typo can't become a value.
 function Selector({ label, options, value, onChange, error = false }: SelectorProps) {
-    const handleChange = (event: SelectChangeEvent) => {
-        onChange(event.target.value);
-    };
-
     return (
         <Field label={label}>
-            <Select
-                value={value}
-                onChange={handleChange}
-                error={error}
+            <Autocomplete
+                options={options}
+                // Autocomplete uses null for "nothing chosen"; the form keeps ""
+                value={value || null}
+                onChange={(_, chosen) => onChange(chosen ?? '')}
+                filterOptions={(all, state) => rankOptions(all, state.inputValue)}
+                // Enter picks the first match, so "goo" + Enter chooses Google
+                autoHighlight
+                openOnFocus
                 fullWidth
-                displayEmpty
-                renderValue={(selected) => selected || <span style={{ color: tokens.textMuted }}>Choose…</span>}
-            >
-                {options.map((option) => (
-                    <MenuItem key={option} value={option} sx={{ fontSize: 14 }}>
-                        {option}
-                    </MenuItem>
-                ))}
-            </Select>
+                slotProps={{ listbox: { sx: { fontSize: 14 } } }}
+                renderInput={(params) => <TextField {...params} placeholder="Type or choose…" error={error} />}
+            />
         </Field>
     );
 }
