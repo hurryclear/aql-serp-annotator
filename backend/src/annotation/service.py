@@ -1,16 +1,29 @@
-"""save human annotations of SERPs"""
+"""save, read and edit human annotations of SERPs"""
 from collections import Counter
 from uuid import UUID, uuid5
 
 from src.database.core import SessionLocal
 from src.entities.annotation import Annotation
 from src.entities.feature import Feature
-from src.annotation.models import FeatureInput
+from src.annotation.models import (
+    AnnotationOutput,
+    FeatureInput,
+    FeatureOutput,
+)
 from src.serp.service import get_question_serp_by_id, get_serp_html, save_serp_html
-from utils.html_utils import mark_features
+from utils.html_utils import mark_features, marked_nodes
+from utils.resource_json_loader import PROVIDERS
 
 from namespaces import NAMESPACE_FEATURE
-from exceptions import AnnotationExistsError, InvalidMarkError, SerpNotQuestionSerpError
+from exceptions import (
+    AnnotationExistsError,
+    AnnotationNotFoundError,
+    InvalidMarkError,
+    SerpNotQuestionSerpError,
+)
+
+# AQL provider id -> display name ("google"), the reverse of PROVIDERS
+PROVIDER_NAMES = {provider_id: name for name, provider_id in PROVIDERS.items()}
 
 
 def feature_id(serp_id: UUID, feature_type: str, n: int) -> UUID:
@@ -103,3 +116,49 @@ def create_annotation(
         if marked_html is not None:
             save_serp_html(serp_id, marked_html)
         session.commit()
+
+
+# ---- reading and editing (the editor) ------------------------------------
+
+
+def _provider_name(provider_id: str) -> str:
+    return PROVIDER_NAMES.get(provider_id, provider_id)
+
+
+def _features_in_page_order(serp_id: UUID, rows: list[Feature]) -> list[FeatureOutput]:
+    """Pair each feature row with its element, using the page-order rule: the n-th
+    element marked with type T is the row with id uuid5(serp_id:T:n)."""
+    by_id = {row.id: row for row in rows}
+    snapshot = get_serp_html(serp_id)
+    seen: Counter[str] = Counter()
+    ordered: list[FeatureOutput] = []
+    for node, feature_type in (marked_nodes(snapshot) if snapshot else []):
+        seen[feature_type] += 1
+        row = by_id.pop(feature_id(serp_id, feature_type, seen[feature_type]), None)
+        if row is not None:
+            ordered.append(FeatureOutput(id=row.id, feature_type=row.feature_type, node=node, parser_id=row.parser_id))
+    # rows without a mark in the page (saved before marking existed) come last, without a node
+    for row in by_id.values():
+        ordered.append(FeatureOutput(id=row.id, feature_type=row.feature_type, node=None, parser_id=row.parser_id))
+    return ordered
+
+
+def get_annotation(serp_id: UUID) -> AnnotationOutput:
+    """One annotation with its features in page order. Raises AnnotationNotFoundError."""
+    with SessionLocal() as session:
+        annotation = session.get(Annotation, serp_id)
+        if annotation is None:
+            raise AnnotationNotFoundError(f"{serp_id} is not annotated")
+        rows = session.query(Feature).filter_by(serp_id=serp_id).all()
+        return AnnotationOutput(
+            serp_id=annotation.serp_id,
+            provider_id=annotation.provider,
+            provider=_provider_name(annotation.provider),
+            language=annotation.language,
+            year=annotation.year,
+            created_by=annotation.created_by,
+            ground_truth=annotation.ground_truth,
+            created_at=annotation.created_at,
+            updated_at=annotation.updated_at,
+            features=_features_in_page_order(serp_id, rows),
+        )

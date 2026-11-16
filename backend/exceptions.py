@@ -2,6 +2,11 @@ class AnnotationExistsError(Exception):
     pass
 
 
+class AnnotationNotFoundError(Exception):
+    """The SERP has no annotation to read or edit."""
+    pass
+
+
 class InvalidMarkError(Exception):
     """A feature's marked element can't be written into the SERP's snapshot."""
     pass

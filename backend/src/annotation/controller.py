@@ -1,8 +1,21 @@
+from uuid import UUID
+
 from fastapi import APIRouter, HTTPException
 
-from src.annotation.models import AnnotationInput
-from src.annotation.service import create_annotation
-from exceptions import AnnotationExistsError, InvalidMarkError, SerpNotQuestionSerpError
+from src.annotation.models import (
+    AnnotationInput,
+    AnnotationOutput,
+)
+from src.annotation.service import (
+    create_annotation,
+    get_annotation,
+)
+from exceptions import (
+    AnnotationExistsError,
+    AnnotationNotFoundError,
+    InvalidMarkError,
+    SerpNotQuestionSerpError,
+)
 
 
 router = APIRouter(prefix="/annotations", tags=["annotations"])
@@ -20,3 +33,11 @@ def create(annotation: AnnotationInput) -> None:
         raise HTTPException(status_code=404, detail=f"SERP {annotation.serp_id} is not a question SERP")
     except InvalidMarkError as e:
         raise HTTPException(status_code=422, detail=str(e))
+
+
+@router.get("/{serp_id}")
+def read(serp_id: UUID) -> AnnotationOutput:
+    try:
+        return get_annotation(serp_id)
+    except AnnotationNotFoundError:
+        raise HTTPException(status_code=404, detail=f"SERP {serp_id} is not annotated")
