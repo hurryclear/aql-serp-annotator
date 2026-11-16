@@ -7,18 +7,23 @@ import Typography from "@mui/material/Typography";
 type TopBarProps = {
   position: number; // 1-based
   total: number;
+  serpId: string;
   provider: string;
   language: string;
   year: number;
   onExit: () => void;
 };
 
-function TopBar({ position, total, provider, language, year, onExit }: TopBarProps) {
+function TopBar({ position, total, serpId, provider, language, year, onExit }: TopBarProps) {
   return (
     <Card sx={{ borderRadius: 1 }}>
       <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", px: 1.5, py: 1 }}>
         <Typography variant="subtitle1" sx={{ whiteSpace: "nowrap" }}>
           SERP {position} of {total}
+        </Typography>
+        {/* selectable, so it can be copied to look the SERP up elsewhere */}
+        <Typography variant="caption" color="text.secondary" sx={{ fontFamily: "monospace", whiteSpace: "nowrap", userSelect: "all" }}>
+          {serpId}
         </Typography>
         <LinearProgress variant="determinate" value={(position / total) * 100} sx={{ flex: 1 }} />
         <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: "nowrap" }}>

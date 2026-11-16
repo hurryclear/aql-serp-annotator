@@ -58,7 +58,7 @@ function Workspace({ serpIds, createdBy, provider, language, year }: WorkspaceSt
   const serpId = serpIds[position];
   return (
     <Box sx={{ height: "100%", display: "flex", flexDirection: "column", gap: 1.25, p: 1.25 }}>
-      <TopBar position={position + 1} total={serpIds.length} provider={provider} language={language} year={year} onExit={() => navigate("/")} />
+      <TopBar position={position + 1} total={serpIds.length} serpId={serpId} provider={provider} language={language} year={year} onExit={() => navigate("/")} />
       {/* keyed by SERP: React starts a fresh session (empty blocks, no message) for every SERP */}
       <SerpSession
         key={serpId}
