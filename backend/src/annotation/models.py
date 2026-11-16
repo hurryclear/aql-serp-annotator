@@ -33,3 +33,12 @@ class AnnotationOutput(BaseModel):
     created_at: datetime
     updated_at: datetime
     features: list[FeatureOutput]  # in page order
+
+
+# one row of GET /annotations/groups
+class AnnotationGroup(BaseModel):
+    provider_id: str
+    provider: str
+    year: int
+    annotations: int  # how many annotations (one per SERP) the group has
+    ground_truth: int

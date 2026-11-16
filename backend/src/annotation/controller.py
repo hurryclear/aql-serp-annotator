@@ -3,12 +3,14 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException
 
 from src.annotation.models import (
+    AnnotationGroup,
     AnnotationInput,
     AnnotationOutput,
 )
 from src.annotation.service import (
     create_annotation,
     get_annotation,
+    list_groups,
 )
 from exceptions import (
     AnnotationExistsError,
@@ -33,6 +35,12 @@ def create(annotation: AnnotationInput) -> None:
         raise HTTPException(status_code=404, detail=f"SERP {annotation.serp_id} is not a question SERP")
     except InvalidMarkError as e:
         raise HTTPException(status_code=422, detail=str(e))
+
+
+# declared before /{serp_id}, or FastAPI would try to read "groups" as a SERP id
+@router.get("/groups")
+def groups() -> list[AnnotationGroup]:
+    return list_groups()
 
 
 @router.get("/{serp_id}")

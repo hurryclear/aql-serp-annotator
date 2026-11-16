@@ -51,5 +51,20 @@ def test_read_returns_features_in_page_order_with_their_elements(client):
     assert body["ground_truth"] is False
 
 
+def test_groups_count_by_provider_and_year(client):
+    groups = client.get("/annotations/groups").json()
+    mine = [g for g in groups if g["provider_id"] == RECORD["provider"] and g["year"] == RECORD["year"]]
+    assert mine == [{
+        "provider_id": RECORD["provider"], "provider": PROVIDER_NAMES[RECORD["provider"]], "year": RECORD["year"],
+        "annotations": 1, "ground_truth": 0,
+    }]
+
+
+def test_groups_are_ordered_by_provider_then_year(client):
+    groups = client.get("/annotations/groups").json()
+    keys = [(g["provider"], g["year"]) for g in groups]
+    assert keys == sorted(keys)
+
+
 def test_unknown_serp_is_404(client):
     assert client.get("/annotations/00000000-0000-0000-0000-000000000000").status_code == 404

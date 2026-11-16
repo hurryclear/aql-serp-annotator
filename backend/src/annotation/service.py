@@ -1,11 +1,12 @@
 """save, read and edit human annotations of SERPs"""
-from collections import Counter
+from collections import Counter, defaultdict
 from uuid import UUID, uuid5
 
 from src.database.core import SessionLocal
 from src.entities.annotation import Annotation
 from src.entities.feature import Feature
 from src.annotation.models import (
+    AnnotationGroup,
     AnnotationOutput,
     FeatureInput,
     FeatureOutput,
@@ -123,6 +124,32 @@ def create_annotation(
 
 def _provider_name(provider_id: str) -> str:
     return PROVIDER_NAMES.get(provider_id, provider_id)
+
+
+def list_groups() -> list[AnnotationGroup]:
+    """Annotations grouped by provider and year, with counts per group."""
+    with SessionLocal() as session:
+        annotations = session.query(Annotation.provider, Annotation.year, Annotation.ground_truth).all()
+
+    counts: dict[tuple[str, int], Counter] = defaultdict(Counter)
+    for row in annotations:
+        group = counts[(row.provider, row.year)]
+        group["annotations"] += 1
+        group["ground_truth"] += bool(row.ground_truth)
+
+    return [
+        AnnotationGroup(
+            provider_id=provider_id,
+            provider=_provider_name(provider_id),
+            year=year,
+            annotations=c["annotations"],
+            ground_truth=c["ground_truth"],
+        )
+        # by provider name, then year
+        for (provider_id, year), c in sorted(
+            counts.items(), key=lambda item: (_provider_name(item[0][0]), item[0][1])
+        )
+    ]
 
 
 def _features_in_page_order(serp_id: UUID, rows: list[Feature]) -> list[FeatureOutput]:
