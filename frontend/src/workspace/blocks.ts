@@ -43,6 +43,16 @@ export function unmarkAccepted(doc: Document, index: number): void {
   if (element.classList.length === 0) element.removeAttribute("class");
 }
 
+// the editor: find a saved feature's element by its aqlqa-node number
+export function elementByNode(doc: Document, node: number): Element | null {
+  return doc.querySelector(`[${NODE_ATTR}="${node}"]`);
+}
+
+// the editor: change an accepted block's type in the page
+export function setBlockType(doc: Document, index: number, featureType: string): void {
+  doc.querySelector(`[${INDEX_ATTR}="${index}"]`)?.setAttribute(TYPE_ATTR, featureType);
+}
+
 // what gets saved as the feature's content: the block as the SERP had it, without our marks
 export function blockContent(element: Element): string {
   const copy = element.cloneNode(true) as Element;
