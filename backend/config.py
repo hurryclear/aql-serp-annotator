@@ -5,16 +5,25 @@ from pathlib import Path
 from elasticsearch import Elasticsearch
 from pydantic import Field, AliasChoices, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
 # from warc_cache import WarcCacheStore
 from warc_s3 import WarcS3Store
 from sqlalchemy import create_engine, event, Engine
 
-
+# data/ (repo root): what the app writes while you work (database, SERP snapshots).
+# Local to each machine and git-ignored, unlike backend/resources/ (see QuestionSerpsConfig).
 DATA_ROOT = Path(__file__).resolve().parent.parent / "data"
 
+# the only things that differ between environments: where the data goes, and which question file is read
 ENVIRONMENTS: dict[str, dict[str, Any]] = {
-    "test": {"data_path": DATA_ROOT / "test", "candidates_file": "question_serps_test.jsonl"},
-    "prod": {"data_path": DATA_ROOT / "prod", "candidates_file": "question_serps.jsonl"},
+    "test": {
+        "data_path": DATA_ROOT / "test",
+        "question_serps_file": "question_serps_test.jsonl",
+    },
+    "prod": {
+        "data_path": DATA_ROOT / "prod",
+        "question_serps_file": "question_serps.jsonl",
+    },
 }
 
 
@@ -40,11 +49,13 @@ class EsConfig(BaseSettings):
         return Elasticsearch(
             hosts=f"https://{self.host}:{self.port}",
             api_key=self.api_key,
-            http_auth=(self.username, self.password)
-            if self.api_key is None
-            and self.username is not None
-            and self.password is not None
-            else None,
+            http_auth=(
+                (self.username, self.password)
+                if self.api_key is None
+                and self.username is not None
+                and self.password is not None
+                else None
+            ),
             timeout=60,
             max_retries=self.max_retries,
             retry_on_status=(502, 503, 504),
@@ -95,20 +106,22 @@ class PersistenceConfig(BaseSettings):
     @cached_property
     def sqlite_engine(self) -> Engine:
         engine = create_engine(url=f"sqlite:///{self.sqlite_path}")
+
         @event.listens_for(engine, "connect")
         def enable_foreign_keys(dbapi_connection, connection_record):
             cursor = dbapi_connection.cursor()
             cursor.execute("PRAGMA foreign_keys=ON")
             cursor.close()
+
         return engine
 
 
-# the candidate SERPs that carts are drawn from; tracked in git under resources/ so
-# every annotator works from the same set (unlike data/, which is local and ignored)
-class CandidateSerpsConfig(BaseSettings):
+# the question SERPs that batches are drawn from; under backend/resources/, which ships
+# with the code, so every annotator works from the same set
+class QuestionSerpsConfig(BaseSettings):
     model_config = SettingsConfigDict(frozen=True)
     dir_path: Path = Path(__file__).resolve().parent / "resources"
-    file_name: str = ENVIRONMENTS["test"]["candidates_file"]
+    file_name: str = ENVIRONMENTS["test"]["question_serps_file"]
 
 
 class Config(BaseSettings):
@@ -119,7 +132,6 @@ class Config(BaseSettings):
         env_nested_max_split=1,
     )
 
-    # test unless asked otherwise, so real annotations are only touched on purpose
     app_env: Literal["test", "prod"] = "test"
 
     es: Annotated[
@@ -130,9 +142,10 @@ class Config(BaseSettings):
     ] = EsConfig()
     s3: S3Config = S3Config()
     persistence: PersistenceConfig = PersistenceConfig()
-    # named without "_" because env vars split at the first "_" (env_nested_max_split=1):
-    # CANDIDATES_FILE_NAME -> candidates.file_name
-    candidates: CandidateSerpsConfig = CandidateSerpsConfig()
+    # careful: env vars split at the first "_" (env_nested_max_split=1), so this section
+    # can't be set from .env (QUESTION_SERPS_FILE_NAME -> question.serps_file_name);
+    # APP_ENV=prod still switches the file through ENVIRONMENTS
+    question_serps: QuestionSerpsConfig = QuestionSerpsConfig()
 
     # runs on the raw settings before validation: fill in the chosen environment's
     # defaults for anything the env vars / .env didn't set explicitly
@@ -147,15 +160,15 @@ class Config(BaseSettings):
         data = dict(data)
         for section, key, value in (
             ("persistence", "data_path", defaults["data_path"]),
-            ("candidates", "file_name", defaults["candidates_file"]),
+            ("question_serps", "file_name", defaults["question_serps_file"]),
         ):
             if isinstance(data.get(section, {}), dict):
                 data[section] = {key: value, **data.get(section, {})}
         return data
 
     @cached_property
-    def candidate_serps_path(self) -> Path:
-        return self.candidates.dir_path / self.candidates.file_name
+    def question_serps_path(self) -> Path:
+        return self.question_serps.dir_path / self.question_serps.file_name
 
     # http: HttpConfig = HttpConfig()
     # warc_cache: WarcCacheConfig = WarcCacheConfig()

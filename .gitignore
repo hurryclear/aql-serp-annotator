@@ -9,4 +9,8 @@ CLAUDE.md
 .mypy_cache
 __pycache__
 
+# local data the app writes (database, SERP snapshots): different on every machine
 data/
+
+# the full question SERP set (784 MB): too big for git, shared outside the repo
+backend/resources/question_serps.jsonl

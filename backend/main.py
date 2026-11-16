@@ -16,7 +16,7 @@ async def lifespan(app: FastAPI):
         "APP_ENV=%s · data: %s · candidate SERPs: %s",
         config.app_env,
         config.persistence.data_path,
-        config.candidates.file_name,
+        config.question_serps.file_name,
     )
     Base.metadata.create_all(config.persistence.sqlite_engine)
     yield

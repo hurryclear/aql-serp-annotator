@@ -7,7 +7,6 @@ from src.database.core import SessionLocal
 from src.entities.annotation import Annotation
 from src.entities.feature import Feature
 
-from schemas import AnnotatedFeatureInput
 from namespaces import NAMESPACE_FEATURE
 from exceptions import AnnotationExistsError, CartNotFoundError
 
@@ -15,7 +14,6 @@ from exceptions import AnnotationExistsError, CartNotFoundError
 def save_annotation(
     serp_id: UUID,
     cart_id: UUID,
-    input_features: list[AnnotatedFeatureInput],
     overwrite: bool = False,
 ) -> None:
     """Record a human annotation of one SERP.
