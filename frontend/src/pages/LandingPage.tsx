@@ -5,7 +5,8 @@ import OutlinedInput from "@mui/material/OutlinedInput";
 import Stack from "@mui/material/Stack";
 import Button from "@mui/material/Button";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
-import { useNavigate } from "react-router-dom";
+import Link from "@mui/material/Link";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
 import { listSerps } from "../api/serps";
 import Selector from "../components/Selector";
 import CenteredCard from "../components/CenteredCard";
@@ -104,6 +105,9 @@ function LandingPage() {
               <InlineError>{error}</InlineError>
             </Box>
           )}
+          <Typography variant="body2" sx={{ mt: 2, textAlign: "center" }}>
+            <Link component={RouterLink} to="/editor">Review or edit saved annotations</Link>
+          </Typography>
     </CenteredCard>
   );
 }
