@@ -6,9 +6,13 @@
         {"name": "english", "code": "en"},
         {"name": "spanish", "code": "es"},
         {"name": "french", "code": "fr"},
+        {"name": "hindi", "code": "hi"},
         {"name": "indonesian", "code": "id"},
         {"name": "portuguese", "code": "pt"},
         {"name": "russian", "code": "ru"},
-        {"name": "chinese", "code": "zh"}
+        {"name": "urdu", "code": "ur"},
+        {"name": "korean", "code": "ko"},
+        {"name": "simplified_chinese", "code": "zh-Hans"},
+        {"name": "traditional_chinese", "code": "zh-Hant"}
     ]
 }
