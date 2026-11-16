@@ -74,6 +74,10 @@ export function injectOutlineStyles(doc: Document): void {
     `.${TESTING} { outline: 3px solid #FFA500 !important; outline-offset: 2px;` +
     ` background-color: rgba(255, 165, 0, 0.1) !important; transition: all 0.3s ease; }\n` +
     `.${ACCEPTED} { outline: 2px solid #4CAF50 !important; outline-offset: 2px;` +
-    ` background-color: rgba(76, 175, 80, 0.1) !important; opacity: 0.7; transition: all 0.3s ease; }`;
+    ` background-color: rgba(76, 175, 80, 0.1) !important; opacity: 0.7; transition: all 0.3s ease; }\n` +
+    // a small label with the type at the start of each accepted block
+    `.${ACCEPTED}[${TYPE_ATTR}]::before { content: attr(${TYPE_ATTR}); display: inline-block;` +
+    ` margin: 0 6px 2px 0; padding: 0 5px; border-radius: 3px; background: #4CAF50; color: #fff;` +
+    ` font: 500 11px/1.6 -apple-system, BlinkMacSystemFont, sans-serif; }`;
   doc.head.appendChild(style);
 }
