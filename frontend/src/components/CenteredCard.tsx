@@ -3,7 +3,7 @@ import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 
-// the single centred card the landing page, "all done" and "not open" screens share
+// the single centred card "all done" and "not open" screens share
 function CenteredCard({ children }: { children: ReactNode }) {
   return (
     <Box sx={{ minHeight: "100%", display: "flex", alignItems: "center", justifyContent: "center", p: 2 }}>
