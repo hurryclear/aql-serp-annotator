@@ -143,3 +143,9 @@ def test_use_is_refused_when_the_parser_finds_nothing_or_is_another_providers(cl
     assert response.status_code == 422 and "another provider" in response.json()["detail"]
 
 
+def test_delete_unlinks_every_serp(client):
+    parser_id = save(client, "//div[@class='kp']").json()["id"]
+    use(client, parser_id, SERP_B)
+    assert client.delete(f"/parsers/{parser_id}").status_code == 204
+    assert parser_of(SERP_A) is None and parser_of(SERP_B) is None
+    assert client.delete(f"/parsers/{parser_id}").status_code == 404

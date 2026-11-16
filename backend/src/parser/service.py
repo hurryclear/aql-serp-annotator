@@ -169,3 +169,12 @@ def link_parser(parser_id: UUID, serp_id: UUID) -> LinkOutput:
         return LinkOutput(parser=_output(session, parser), linked=[node for node, _ in blocks])
 
 
+def delete_parser(parser_id: UUID) -> None:
+    """Unlink a parser from every block, then delete it. Raises ParserNotFoundError."""
+    with SessionLocal() as session:
+        parser = session.get(Parser, parser_id)
+        if parser is None:
+            raise ParserNotFoundError(f"parser {parser_id} does not exist")
+        session.query(Feature).filter_by(parser_id=parser_id).update({"parser_id": None}, synchronize_session=False)
+        session.delete(parser)
+        session.commit()

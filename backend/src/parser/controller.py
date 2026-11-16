@@ -11,6 +11,7 @@ from src.parser.models import (
 )
 from src.parser.service import (
     create_parser,
+    delete_parser,
     link_parser,
     list_parsers,
     try_xpath,
@@ -64,3 +65,9 @@ def link(parser_id: UUID, serp_id: UUID) -> LinkOutput:
         raise HTTPException(status_code=422, detail=str(e))
 
 
+@router.delete("/{parser_id}", status_code=204)
+def delete(parser_id: UUID) -> None:
+    try:
+        delete_parser(parser_id)
+    except ParserNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
