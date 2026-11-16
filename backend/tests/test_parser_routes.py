@@ -89,6 +89,21 @@ def test_invalid_xpath_is_422(client):
 # ---- a new parser ----------------------------------------------------------
 
 
+def test_save_links_the_blocks_it_finds_on_this_serp_only(client):
+    response = save(client, "//div[@class='kp']")
+    assert response.status_code == 201
+    body = response.json()
+    assert body["id"] == str(uuid5(NAMESPACE_FEATURE_PARSER, f"{A['provider']}:{A['year']}:kp:1"))
+    assert (body["serps"], body["years"]) == (1, [A["year"]])
+    assert parser_of(SERP_A) == UUID(body["id"])
+    assert parser_of(SERP_B) is None  # another SERP isn't linked by saving
+
+
+def test_a_parser_that_finds_no_annotated_block_here_is_refused(client):
+    response = save(client, "//p")
+    assert response.status_code == 422 and "finds none" in response.json()["detail"]
+
+
 # ---- reusing an existing parser --------------------------------------------
 
 

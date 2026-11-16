@@ -20,3 +20,21 @@ class TryOutput(BaseModel):
     extra: list[int]    # found, not annotated
 
 
+# POST /parsers: an xpath that works on this SERP becomes a new parser
+class ParserInput(BaseModel):
+    serp_id: UUID  # the SERP it was designed on: its blocks get linked
+    feature_type: str
+    xpath: str
+
+
+class ParserOutput(BaseModel):
+    id: UUID
+    provider_id: str
+    feature_type: str
+    xpath: str
+    created_at: datetime
+    updated_at: datetime
+    serps: int        # SERPs whose blocks are linked to it (feature.parser_id)
+    years: list[int]  # the years of those SERPs: a parser can be reused across years
+
+
