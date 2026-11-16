@@ -71,10 +71,36 @@ def test_list_one_group(client):
     assert [(r["serp_id"], r["feature_count"]) for r in rows] == [(str(SERP_ID), 2)]
 
 
-def test_unknown_serp_is_404(client):
-    other = "00000000-0000-0000-0000-000000000000"
-    assert client.get(f"/annotations/{other}").status_code == 404
-    assert client.patch(f"/annotations/{other}", json={"ground_truth": True}).status_code == 404
+def test_replace_keeps_parser_id_of_unmoved_blocks_and_rewrites_the_marks(client):
+    # link the kp block to a parser, as parser development would
+    parser_id = uuid4()
+    with SessionLocal() as s:
+        s.add(Parser(id=parser_id, provider=RECORD["provider"], feature_type="kp", xpath="//div", created_by="t"))
+        s.get(Feature, feature_id(SERP_ID, "kp", 1)).parser_id = parser_id
+        s.commit()
+
+    # keep kp on node 5, change node 3 from ads to kp, add ads on node 4
+    response = client.put(f"/annotations/{SERP_ID}", json={"features": [
+        {"feature_type": "kp", "node": 5}, {"feature_type": "kp", "node": 3}, {"feature_type": "ads", "node": 4},
+    ]})
+    assert response.status_code == 200
+    features = response.json()["features"]
+    assert [(f["feature_type"], f["node"]) for f in features] == [("kp", 3), ("ads", 4), ("kp", 5)]
+    # page order renumbers: node 3 is now kp #1, node 5 kp #2, so the parser link
+    # follows the id kp #1, which now belongs to the block on node 3
+    assert features[0]["parser_id"] == str(parser_id)
+    assert features[2]["parser_id"] is None
+
+    html = get_serp_html(SERP_ID)
+    assert '<div aqlqa-node="3" aqlqa-sf-type="kp">a</div>' in html
+    assert '<div aqlqa-node="4" aqlqa-sf-type="ads">b</div>' in html
+    assert '<div aqlqa-node="5" aqlqa-sf-type="kp">c</div>' in html
+
+
+def test_confirm_then_edit_resets_ground_truth(client):
+    assert client.patch(f"/annotations/{SERP_ID}", json={"ground_truth": True}).json()["ground_truth"] is True
+    response = client.put(f"/annotations/{SERP_ID}", json={"features": [{"feature_type": "kp", "node": 5}]})
+    assert response.json()["ground_truth"] is False
 
 
 def test_confirmed_annotation_can_be_unconfirmed(client):
@@ -82,3 +108,18 @@ def test_confirmed_annotation_can_be_unconfirmed(client):
     response = client.patch(f"/annotations/{SERP_ID}", json={"ground_truth": False})
     assert response.status_code == 200 and response.json()["ground_truth"] is False
     assert len(response.json()["features"]) == 2  # features untouched
+
+
+def test_replace_with_empty_list_means_no_features_and_clears_marks(client):
+    assert client.put(f"/annotations/{SERP_ID}", json={"features": []}).json()["features"] == []
+    assert "aqlqa-sf-type" not in get_serp_html(SERP_ID)
+
+
+def test_unknown_serp_is_404_and_bad_element_is_422(client):
+    other = "00000000-0000-0000-0000-000000000000"
+    assert client.get(f"/annotations/{other}").status_code == 404
+    assert client.put(f"/annotations/{other}", json={"features": []}).status_code == 404
+    assert client.patch(f"/annotations/{other}", json={"ground_truth": True}).status_code == 404
+    assert client.put(f"/annotations/{SERP_ID}", json={"features": [{"feature_type": "kp", "node": 99}]}).status_code == 422
+    # the refused edit changed nothing
+    assert len(client.get(f"/annotations/{SERP_ID}").json()["features"]) == 2

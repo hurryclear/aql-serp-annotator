@@ -219,6 +219,56 @@ def get_annotation(serp_id: UUID) -> AnnotationOutput:
         )
 
 
+def replace_annotation(serp_id: UUID, input_features: list[FeatureInput]) -> AnnotationOutput:
+    """Replace an annotation's feature list (the editor's Save changes).
+
+    Ids are recomputed in page order, so a block that stays where it is keeps its
+    id and its parser_id. Any edit resets ground_truth to False. The snapshot's
+    old marks are removed and the new ones written. Raises
+    AnnotationNotFoundError and InvalidMarkError.
+    """
+    features = build_features(serp_id, input_features)
+
+    snapshot = get_serp_html(serp_id)
+    if snapshot is None and features:
+        raise InvalidMarkError(f"SERP {serp_id} has no cached snapshot; open it first")
+    # prepared before the database is touched, so a bad element number stops the save
+    marked_html = (
+        mark_features(snapshot, [(node, f.feature_type) for f, node in features], clear_old=True)
+        if snapshot is not None
+        else None
+    )
+
+    with SessionLocal() as session:
+        annotation = session.get(Annotation, serp_id)
+        if annotation is None:
+            raise AnnotationNotFoundError(f"{serp_id} is not annotated")
+
+        # columns, not Feature objects: nothing old stays in the session to clash
+        # with the new rows that reuse the same ids
+        old_parser_ids = dict(
+            session.query(Feature.id, Feature.parser_id).filter_by(serp_id=serp_id).all()
+        )
+        session.query(Feature).filter_by(serp_id=serp_id).delete(synchronize_session=False)
+        session.flush()
+
+        for feature, _ in features:
+            # a block that still exists keeps its link to the parser built from it
+            feature.parser_id = old_parser_ids.get(feature.id)
+        session.add_all(feature for feature, _ in features)
+
+        # an edited annotation is no longer confirmed
+        annotation.ground_truth = False
+        annotation.updated_at = datetime.now(UTC)
+        session.flush()
+
+        if marked_html is not None:
+            save_serp_html(serp_id, marked_html)
+        session.commit()
+
+    return get_annotation(serp_id)
+
+
 def set_ground_truth(serp_id: UUID, ground_truth: bool) -> AnnotationOutput:
     """Confirm an annotation as ground truth (or take that back). Raises AnnotationNotFoundError."""
     with SessionLocal() as session:

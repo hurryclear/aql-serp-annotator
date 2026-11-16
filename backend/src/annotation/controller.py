@@ -7,6 +7,7 @@ from src.annotation.models import (
     AnnotationInput,
     AnnotationOutput,
     AnnotationPatch,
+    AnnotationReplace,
     AnnotationSummary,
 )
 from src.annotation.service import (
@@ -14,6 +15,7 @@ from src.annotation.service import (
     get_annotation,
     list_annotations,
     list_groups,
+    replace_annotation,
     set_ground_truth,
 )
 from exceptions import (
@@ -59,6 +61,17 @@ def read(serp_id: UUID) -> AnnotationOutput:
         return get_annotation(serp_id)
     except AnnotationNotFoundError:
         raise HTTPException(status_code=404, detail=f"SERP {serp_id} is not annotated")
+
+
+# the editor's Save changes: the whole new feature list replaces the old one
+@router.put("/{serp_id}")
+def replace(serp_id: UUID, body: AnnotationReplace) -> AnnotationOutput:
+    try:
+        return replace_annotation(serp_id, body.features)
+    except AnnotationNotFoundError:
+        raise HTTPException(status_code=404, detail=f"SERP {serp_id} is not annotated")
+    except InvalidMarkError as e:
+        raise HTTPException(status_code=422, detail=str(e))
 
 
 # Confirm as ground truth: {"ground_truth": true}

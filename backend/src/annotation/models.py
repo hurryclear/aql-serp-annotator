@@ -14,6 +14,11 @@ class AnnotationInput(BaseModel):
     features: list[FeatureInput]
 
 
+# PUT /annotations/{serp_id}: the editor sends the whole new feature list
+class AnnotationReplace(BaseModel):
+    features: list[FeatureInput]
+
+
 # PATCH /annotations/{serp_id}: change single fields; only ground_truth for now
 class AnnotationPatch(BaseModel):
     ground_truth: bool
