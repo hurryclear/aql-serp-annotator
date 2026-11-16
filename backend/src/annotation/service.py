@@ -1,5 +1,6 @@
 """save, read and edit human annotations of SERPs"""
 from collections import Counter, defaultdict
+from datetime import datetime, UTC
 from uuid import UUID, uuid5
 
 from src.database.core import SessionLocal
@@ -216,3 +217,15 @@ def get_annotation(serp_id: UUID) -> AnnotationOutput:
             updated_at=annotation.updated_at,
             features=_features_in_page_order(serp_id, rows),
         )
+
+
+def set_ground_truth(serp_id: UUID, ground_truth: bool) -> AnnotationOutput:
+    """Confirm an annotation as ground truth (or take that back). Raises AnnotationNotFoundError."""
+    with SessionLocal() as session:
+        annotation = session.get(Annotation, serp_id)
+        if annotation is None:
+            raise AnnotationNotFoundError(f"{serp_id} is not annotated")
+        annotation.ground_truth = ground_truth
+        annotation.updated_at = datetime.now(UTC)
+        session.commit()
+    return get_annotation(serp_id)

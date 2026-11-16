@@ -14,6 +14,11 @@ class AnnotationInput(BaseModel):
     features: list[FeatureInput]
 
 
+# PATCH /annotations/{serp_id}: change single fields; only ground_truth for now
+class AnnotationPatch(BaseModel):
+    ground_truth: bool
+
+
 class FeatureOutput(BaseModel):
     id: UUID
     feature_type: str

@@ -72,4 +72,13 @@ def test_list_one_group(client):
 
 
 def test_unknown_serp_is_404(client):
-    assert client.get("/annotations/00000000-0000-0000-0000-000000000000").status_code == 404
+    other = "00000000-0000-0000-0000-000000000000"
+    assert client.get(f"/annotations/{other}").status_code == 404
+    assert client.patch(f"/annotations/{other}", json={"ground_truth": True}).status_code == 404
+
+
+def test_confirmed_annotation_can_be_unconfirmed(client):
+    client.patch(f"/annotations/{SERP_ID}", json={"ground_truth": True})
+    response = client.patch(f"/annotations/{SERP_ID}", json={"ground_truth": False})
+    assert response.status_code == 200 and response.json()["ground_truth"] is False
+    assert len(response.json()["features"]) == 2  # features untouched
