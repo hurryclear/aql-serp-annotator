@@ -10,6 +10,7 @@ export type AnnotationGroup = {
 // one row of GET /annotations?provider_id=…&year=…
 export type AnnotationSummary = {
   serp_id: string;
+  year: number;
   created_by: string;
   ground_truth: boolean;
   feature_count: number;

@@ -17,6 +17,13 @@ export async function listAnnotations(providerId: string, year: number): Promise
   return response.data;
 }
 
+export async function listAnnotationsOfType(providerId: string, featureType: string): Promise<AnnotationSummary[]> {
+  const response = await apiClient.get<AnnotationSummary[]>("/annotations", {
+    params: { provider_id: providerId, feature_type: featureType}
+  });
+  return response.data;
+}
+
 export async function getAnnotation(serpId: string): Promise<AnnotationOutput> {
   const response = await apiClient.get<AnnotationOutput>(`/annotations/${serpId}`);
   return response.data;

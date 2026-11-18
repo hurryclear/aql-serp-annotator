@@ -24,3 +24,11 @@ export type LinkOutput = {
   parser: ParserOutput;
   linked: number[]; // aqlqa-node numbers of the blocks now linked to it
 };
+
+export type ParserSummary = {
+  provider_id: string;
+  provider_name: string;
+  feature_type: string;
+  features: number;
+  parsers: number;
+}

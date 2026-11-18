@@ -1,4 +1,4 @@
-import type { LinkOutput, ParserOutput, TryOutput } from "../types/parser";
+import type { LinkOutput, ParserOutput, ParserSummary, TryOutput } from "../types/parser";
 import { apiClient } from "./client";
 
 // a provider's parsers of every year; without a type, all of them
@@ -28,4 +28,9 @@ export async function linkParser(parserId: string, serpId: string): Promise<Link
 
 export async function deleteParser(parserId: string): Promise<void> {
   await apiClient.delete(`/parsers/${parserId}`);
+}
+
+export async function getParserSummary(): Promise<ParserSummary[]> {
+  const response = await apiClient.get<ParserSummary[]>("/parsers/summary");
+  return response.data;
 }
