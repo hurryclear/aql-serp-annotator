@@ -15,9 +15,10 @@ function HomePage() {
   const [form, setForm] = useState<CartForm>(EMPTY_FORM);
 
   return (
-    // side by side and centred on the page; "stretch" makes both cards as tall as the taller one.
+    // side by side and centred on the page; the form keeps its own height (flex-start), since
+    // the right column holds two cards and stretching would leave a tall empty form.
     // On a narrow window the table wraps below the form (alignContent centres the wrapped rows).
-    <Box sx={{ minHeight: "100%", display: "flex", flexWrap: "wrap", justifyContent: "center", alignContent: "center", alignItems: "stretch", gap: 2, p: 2 }}>
+    <Box sx={{ minHeight: "100%", display: "flex", flexWrap: "wrap", justifyContent: "center", alignContent: "center", alignItems: "flex-start", gap: 2, p: 2 }}>
       <Card sx={{ width: "100%", maxWidth: 380 }}>
         <CardContent sx={{ p: 3 }}>
           <AnnotateForm form={form} onFormChange={setForm} />
