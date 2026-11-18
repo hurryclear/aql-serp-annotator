@@ -39,7 +39,7 @@ function AnnotationGroups({ provider, year }: AnnotationGroupsProps) {
 
   return (
     <>
-      <Typography variant="h5" component="h2">Saved annotations</Typography>
+      <Typography variant="h5" component="h2">Annotations</Typography>
       <Typography variant="body1" color="text.secondary" sx={{ mt: 0.5, mb: 2 }}>
         {choice ? `Showing ${choice}. Clear the provider or year to see more.` : "Review, correct or design parsers for a group."}
       </Typography>
@@ -58,7 +58,7 @@ function AnnotationGroups({ provider, year }: AnnotationGroupsProps) {
               <TableCell>Provider</TableCell>
               <TableCell>Year</TableCell>
               <TableCell align="right">Annotation</TableCell>
-              <TableCell align="right">Ground truth</TableCell>
+              {/* <TableCell align="right">Ground truth</TableCell> */}
               <TableCell />
             </TableRow>
           </TableHead>
@@ -99,7 +99,7 @@ function GroupRow({ group }: { group: AnnotationGroup }) {
         <TableCell sx={{ textTransform: "capitalize" }}>{group.provider}</TableCell>
         <TableCell>{group.year}</TableCell>
         <TableCell align="right">{group.annotations}</TableCell>
-        <TableCell align="right">{group.ground_truth}</TableCell>
+        {/* <TableCell align="right">{group.ground_truth}</TableCell> */}
         <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>
           <Button
             variant="outlined"
@@ -108,19 +108,10 @@ function GroupRow({ group }: { group: AnnotationGroup }) {
           >
             Open
           </Button>
-          {/* the next step after reviewing: find xpaths for this group's feature blocks */}
-          <Button
-            variant="outlined"
-            size="small"
-            sx={{ ml: 0.75 }}
-            onClick={() => navigate(`/parsers/${group.provider_id}/${group.year}`, { state: { provider: group.provider } })}
-          >
-            Design parsers
-          </Button>
         </TableCell>
       </TableRow>
       <TableRow>
-        <TableCell colSpan={6} sx={{ py: 0, ...(open ? {} : { borderBottom: "none" }) }}>
+        <TableCell colSpan={5} sx={{ py: 0, ...(open ? {} : { borderBottom: "none" }) }}>
           <Collapse in={open} timeout="auto" unmountOnExit>
             <Box sx={{ ml: 5, mr: 1, my: 1, bgcolor: tokens.subtle, borderRadius: "6px", px: 1.5, py: 1 }}>
               {error && <InlineError>{error}</InlineError>}
@@ -131,6 +122,7 @@ function GroupRow({ group }: { group: AnnotationGroup }) {
                     <TableRow>
                       <TableCell>SERP id</TableCell>
                       <TableCell align="right">Features</TableCell>
+                      <TableCell align="right">Ground truth</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -140,6 +132,7 @@ function GroupRow({ group }: { group: AnnotationGroup }) {
                           {a.serp_id}
                         </TableCell>
                         <TableCell align="right">{a.feature_count}</TableCell>
+                        <TableCell align="right">{a.ground_truth ? 1 : 0}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
