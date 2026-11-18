@@ -41,7 +41,7 @@ function ParserGroups({ provider }: { provider: string }) {
             >
             {provider
                 ? `Showing ${provider}. Clear the provider to see more.`
-                : "Which feature types have a parser, across all years. Design the missing ones."}
+                : "View and design parsers by provider and feature type."}
             </Typography>
 
             {error && <InlineError>{error}</InlineError>}
