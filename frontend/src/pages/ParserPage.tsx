@@ -9,7 +9,7 @@ import InlineError from "../components/InlineError";
 import TopBar from "../components/workspace/TopBar";
 import SerpFrame from "../components/workspace/SerpFrame";
 import ParserPanel, { type TryResult, type TypeOnSerp } from "../components/parser/ParserPanel";
-import { getAnnotation, listAnnotations } from "../api/annotations";
+import { getAnnotation, listAnnotations, listAnnotationsOfType } from "../api/annotations";
 import { getFeatureTypes } from "../api/featureTypes";
 import { createParser, deleteParser, linkParser, listParsers, tryXpath } from "../api/parsers";
 import { getSerpHtml } from "../api/serps";
@@ -24,8 +24,9 @@ function errorText(error: unknown, fallback: string): string {
 }
 
 // /parsers/:providerId/:year — design parsers on one group's annotated SERPs, one SERP at a time
+// /parsers/:providerId/type/:featureType — one feature type only, on its SERPs of every year
 function ParserPage() {
-  const { providerId = "", year = "" } = useParams();
+  const { providerId = "", year = "", featureType } = useParams();
   const navigate = useNavigate();
   const providerName = (useLocation().state as { provider?: string } | null)?.provider ?? providerId.slice(0, 8);
   const [serps, setSerps] = useState<AnnotationSummary[] | null>(null);
@@ -34,18 +35,21 @@ function ParserPage() {
   const [position, setPosition] = useState(0);
 
   useEffect(() => {
-    listAnnotations(providerId, Number(year)).then(setSerps).catch(() => setLoadError("Couldn't load this group. Is the backend running?"));
+    const loading = featureType ? listAnnotationsOfType(providerId, featureType) : listAnnotations(providerId, Number(year));
+    loading.then(setSerps).catch(() => setLoadError("Couldn't load this group. Is the backend running?"));
     getFeatureTypes()
       .then((types) => setLabels(Object.fromEntries(types.map((t) => [t.id, t.label]))))
       .catch(() => setLoadError("Couldn't load the categories."));
-  }, [providerId, year]);
+  }, [providerId, year, featureType]);
 
   if (loadError) return <CenteredCard><InlineError>{loadError}</InlineError></CenteredCard>;
   if (serps === null) return <CenteredCard><Typography color="text.secondary">Loading…</Typography></CenteredCard>;
   if (serps.length === 0) {
     return (
       <CenteredCard>
-        <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>This group has no annotations.</Typography>
+        <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+          {featureType ? "No SERPs have this feature type." : "This group has no annotations."}
+        </Typography>
         <Button variant="outlined" fullWidth onClick={() => navigate("/")}>Back to start</Button>
       </CenteredCard>
     );
@@ -59,14 +63,14 @@ function ParserPage() {
         total={serps.length}
         serpId={serpId}
         provider={providerName}
-        year={Number(year)}
+        year={featureType ? serps[position].year : Number(year)}
         onPrev={() => setPosition((p) => p - 1)}
         onNext={() => setPosition((p) => p + 1)}
         onExit={() => navigate("/")}
         exitLabel="Back to start"
       />
       {/* keyed by SERP: every SERP starts fresh, with its own page, annotation and result */}
-      <ParserSession key={serpId} serpId={serpId} providerId={providerId} labels={labels} />
+      <ParserSession key={serpId} serpId={serpId} providerId={providerId} labels={labels} onlyType={featureType} />
     </Box>
   );
 }
@@ -82,7 +86,14 @@ function typesOnSerp(annotation: AnnotationOutput): TypeOnSerp[] {
   return [...byType.values()];
 }
 
-function ParserSession({ serpId, providerId, labels }: { serpId: string; providerId: string; labels: Record<string, string> }) {
+type ParserSessionProps = {
+  serpId: string;
+  providerId: string;
+  labels: Record<string, string>;
+  onlyType?: string; // set: only this type's section (the other blocks still show green in the page)
+};
+
+function ParserSession({ serpId, providerId, labels, onlyType }: ParserSessionProps) {
   const [html, setHtml] = useState<string | null>(null);
   const [serpError, setSerpError] = useState<string | null>(null);
   const [annotation, setAnnotation] = useState<AnnotationOutput | null>(null);
@@ -168,7 +179,7 @@ function ParserSession({ serpId, providerId, labels }: { serpId: string; provide
     <Box sx={{ flex: 1, minHeight: 0, display: "flex", gap: 1.25 }}>
       <SerpFrame html={html} error={serpError} onReady={handleReady} />
       <ParserPanel
-        types={annotation ? typesOnSerp(annotation) : []}
+        types={annotation ? typesOnSerp(annotation).filter((t) => !onlyType || t.featureType === onlyType) : []}
         labels={labels}
         parsers={parsers}
         result={result}
