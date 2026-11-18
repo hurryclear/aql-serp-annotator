@@ -51,8 +51,12 @@ def groups() -> list[AnnotationGroup]:
 
 # the editor's group page: GET /annotations?provider_id=f205…&year=2023
 @router.get("")
-def list_all(provider_id: str, year: int) -> list[AnnotationSummary]:
-    return list_annotations(provider_id, year)
+def list_all(
+    provider_id: str,
+    year: int | None = None,
+    feature_type: str | None = None
+) -> list[AnnotationSummary]:
+    return list_annotations(provider_id, year, feature_type)
 
 
 @router.get("/{serp_id}")

@@ -1,4 +1,5 @@
 """save, read and edit human annotations of SERPs"""
+
 from collections import Counter, defaultdict
 from datetime import datetime, UTC
 from uuid import UUID, uuid5
@@ -34,7 +35,9 @@ def feature_id(serp_id: UUID, feature_type: str, n: int) -> UUID:
     return uuid5(NAMESPACE_FEATURE, f"{serp_id}:{feature_type}:{n}")
 
 
-def build_features(serp_id: UUID, input_features: list[FeatureInput]) -> list[tuple[Feature, int]]:
+def build_features(
+    serp_id: UUID, input_features: list[FeatureInput]
+) -> list[tuple[Feature, int]]:
     """Turn the browser's list into Feature rows, each paired with its element number.
 
     Each type is numbered 1, 2, 3, ... in page order (aqlqa-node numbers follow the
@@ -90,7 +93,9 @@ def create_annotation(
     if features:
         snapshot = get_serp_html(serp_id)
         if snapshot is None:
-            raise InvalidMarkError(f"SERP {serp_id} has no cached snapshot; open it first")
+            raise InvalidMarkError(
+                f"SERP {serp_id} has no cached snapshot; open it first"
+            )
         marked_html = mark_features(
             snapshot,
             [(node, feature.feature_type) for feature, node in features],
@@ -131,7 +136,9 @@ def _provider_name(provider_id: str) -> str:
 def list_groups() -> list[AnnotationGroup]:
     """Annotations grouped by provider and year, with counts per group."""
     with SessionLocal() as session:
-        annotations = session.query(Annotation.provider, Annotation.year, Annotation.ground_truth).all()
+        annotations = session.query(
+            Annotation.provider, Annotation.year, Annotation.ground_truth
+        ).all()
 
     counts: dict[tuple[str, int], Counter] = defaultdict(Counter)
     for row in annotations:
@@ -154,15 +161,20 @@ def list_groups() -> list[AnnotationGroup]:
     ]
 
 
-def list_annotations(provider_id: str, year: int) -> list[AnnotationSummary]:
-    """The annotated SERPs of one group, oldest annotation first."""
+def list_annotations(
+    provider_id: str, year: int | None = None, feature_type: str | None = None
+) -> list[AnnotationSummary]:
+
     with SessionLocal() as session:
-        annotations = (
-            session.query(Annotation)
-            .filter_by(provider=provider_id, year=year)
-            .order_by(Annotation.created_at)
-            .all()
-        )
+        query = session.query(Annotation).filter_by(provider=provider_id)
+        if year is not None:
+            query = query.filter_by(year=year)
+        if feature_type is not None:
+            with_type = session.query(Feature.serp_id).filter_by(
+                feature_type=feature_type
+            )
+            query = query.filter(Annotation.serp_id.in_(with_type))
+        annotations = query.order_by(Annotation.year, Annotation.created_at).all()
         feature_counts = Counter(
             row.serp_id
             for row in session.query(Feature.serp_id).filter(
@@ -172,6 +184,7 @@ def list_annotations(provider_id: str, year: int) -> list[AnnotationSummary]:
         return [
             AnnotationSummary(
                 serp_id=a.serp_id,
+                year = a.year,
                 created_by=a.created_by,
                 ground_truth=a.ground_truth,
                 feature_count=feature_counts[a.serp_id],
@@ -191,10 +204,24 @@ def _features_in_page_order(serp_id: UUID, rows: list[Feature]) -> list[FeatureO
         seen[feature_type] += 1
         row = by_id.pop(feature_id(serp_id, feature_type, seen[feature_type]), None)
         if row is not None:
-            ordered.append(FeatureOutput(id=row.id, feature_type=row.feature_type, node=node, parser_id=row.parser_id))
+            ordered.append(
+                FeatureOutput(
+                    id=row.id,
+                    feature_type=row.feature_type,
+                    node=node,
+                    parser_id=row.parser_id,
+                )
+            )
     # rows without a mark in the page (saved before marking existed) come last, without a node
     for row in by_id.values():
-        ordered.append(FeatureOutput(id=row.id, feature_type=row.feature_type, node=None, parser_id=row.parser_id))
+        ordered.append(
+            FeatureOutput(
+                id=row.id,
+                feature_type=row.feature_type,
+                node=None,
+                parser_id=row.parser_id,
+            )
+        )
     return ordered
 
 
@@ -219,7 +246,9 @@ def get_annotation(serp_id: UUID) -> AnnotationOutput:
         )
 
 
-def replace_annotation(serp_id: UUID, input_features: list[FeatureInput]) -> AnnotationOutput:
+def replace_annotation(
+    serp_id: UUID, input_features: list[FeatureInput]
+) -> AnnotationOutput:
     """Replace an annotation's feature list (the editor's Save changes).
 
     Ids are recomputed in page order, so a block that stays where it is keeps its
@@ -234,7 +263,9 @@ def replace_annotation(serp_id: UUID, input_features: list[FeatureInput]) -> Ann
         raise InvalidMarkError(f"SERP {serp_id} has no cached snapshot; open it first")
     # prepared before the database is touched, so a bad element number stops the save
     marked_html = (
-        mark_features(snapshot, [(node, f.feature_type) for f, node in features], clear_old=True)
+        mark_features(
+            snapshot, [(node, f.feature_type) for f, node in features], clear_old=True
+        )
         if snapshot is not None
         else None
     )
@@ -247,9 +278,13 @@ def replace_annotation(serp_id: UUID, input_features: list[FeatureInput]) -> Ann
         # columns, not Feature objects: nothing old stays in the session to clash
         # with the new rows that reuse the same ids
         old_parser_ids = dict(
-            session.query(Feature.id, Feature.parser_id).filter_by(serp_id=serp_id).all()
+            session.query(Feature.id, Feature.parser_id)
+            .filter_by(serp_id=serp_id)
+            .all()
         )
-        session.query(Feature).filter_by(serp_id=serp_id).delete(synchronize_session=False)
+        session.query(Feature).filter_by(serp_id=serp_id).delete(
+            synchronize_session=False
+        )
         session.flush()
 
         for feature, _ in features:

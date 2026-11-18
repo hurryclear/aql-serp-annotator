@@ -48,6 +48,7 @@ class AnnotationOutput(BaseModel):
 # one row of GET /annotations?provider_id=…&year=…
 class AnnotationSummary(BaseModel):
     serp_id: UUID
+    year: int
     created_by: str
     ground_truth: bool
     feature_count: int
