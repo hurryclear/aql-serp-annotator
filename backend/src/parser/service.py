@@ -1,13 +1,15 @@
 """parser development: on one annotated SERP, try xpaths, reuse an existing parser
 that works, or save a new one"""
+
 from uuid import UUID, uuid5
+from collections import Counter
 
 from src.database.core import SessionLocal
 from src.entities.annotation import Annotation
 from src.entities.feature import Feature
 from src.entities.parser import Parser
-from src.annotation.service import feature_id
-from src.parser.models import LinkOutput, ParserOutput, TryOutput
+from src.annotation.service import feature_id, PROVIDER_NAMES
+from src.parser.models import LinkOutput, ParserOutput, TryOutput, ParserSummary
 from src.serp.service import get_serp_html
 from utils.html_utils import marked_nodes, xpath_nodes
 
@@ -98,7 +100,49 @@ def list_parsers(provider_id: str, feature_type: str | None = None) -> list[Pars
         query = session.query(Parser).filter_by(provider=provider_id)
         if feature_type is not None:
             query = query.filter_by(feature_type=feature_type)
-        return [_output(session, p) for p in query.order_by(Parser.feature_type, Parser.created_at).all()]
+        return [
+            _output(session, p)
+            for p in query.order_by(Parser.feature_type, Parser.created_at).all()
+        ]
+
+
+def summary_parsers() -> list[ParserSummary]:
+
+    with SessionLocal() as session:
+        feature_table = (
+            session.query(Annotation.provider, Feature.feature_type, Feature.parser_id)
+            .select_from(Feature)
+            .join(Annotation, Feature.serp_id == Annotation.serp_id)
+            .all()
+        )
+
+        parser_table = session.query(Parser.provider, Parser.feature_type)
+
+        # Counter({('f205…', 'exploration_features'): 2, ('f205…', 'featured_snippet'): 1})
+        features_counter = Counter(
+            (row.provider, row.feature_type) for row in feature_table
+        )
+        parsers_counter = Counter(
+            (row.provider, row.feature_type) for row in parser_table
+        )
+
+        def name(provider_id: str) -> str:
+            return PROVIDER_NAMES.get(provider_id, provider_id)
+
+        pairs = sorted(
+            features_counter.keys() | parsers_counter.keys(),
+            key=lambda pair: (name(pair[0]), pair[1]),
+        )
+        return [
+            ParserSummary(
+                provider_id=provider_id,
+                provider_name=name(provider_id),
+                feature_type=feature_type,
+                features=features_counter[(provider_id, feature_type)],
+                parsers=parsers_counter[(provider_id, feature_type)],
+            )
+            for provider_id, feature_type in pairs
+        ]
 
 
 def _next_parser_id(session, provider_id: str, year: int, feature_type: str) -> UUID:

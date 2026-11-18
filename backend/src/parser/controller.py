@@ -8,6 +8,7 @@ from src.parser.models import (
     ParserOutput,
     TryInput,
     TryOutput,
+    ParserSummary,
 )
 from src.parser.service import (
     create_parser,
@@ -15,6 +16,7 @@ from src.parser.service import (
     link_parser,
     list_parsers,
     try_xpath,
+    summary_parsers,
 )
 from exceptions import (
     AnnotationNotFoundError,
@@ -23,7 +25,6 @@ from exceptions import (
     ParserFindsNothingError,
     ParserNotFoundError,
 )
-
 
 router = APIRouter(prefix="/parsers", tags=["parsers"])
 
@@ -42,6 +43,11 @@ def try_(body: TryInput) -> TryOutput:
 @router.get("")
 def list_all(provider_id: str, feature_type: str | None = None) -> list[ParserOutput]:
     return list_parsers(provider_id, feature_type)
+
+
+@router.get("/summary")
+def summary() -> list[ParserSummary]:
+    return summary_parsers()
 
 
 @router.post("", status_code=201)

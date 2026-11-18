@@ -42,3 +42,11 @@ class ParserOutput(BaseModel):
 class LinkOutput(BaseModel):
     parser: ParserOutput
     linked: list[int]  # aqlqa-node numbers of the blocks now linked to it
+
+
+class ParserSummary(BaseModel):
+    provider_id: str
+    provider_name: str
+    feature_type: str
+    features: int
+    parsers: int
