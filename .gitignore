@@ -14,3 +14,5 @@ data/
 
 # the full question SERP set (784 MB): too big for git, shared outside the repo
 backend/resources/question_serps.jsonl
+
+/src/
