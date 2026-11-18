@@ -4,6 +4,7 @@ import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import AnnotateForm from "../components/home/AnnotateForm";
 import AnnotationGroups from "../components/home/AnnotationGroups";
+import ParserGroups from "../components/home/ParserGroups";
 import type { CartForm } from "../components/home/landingForm";
 
 const EMPTY_FORM: CartForm = { provider: "", language: "", year: "", createdBy: "" };
@@ -22,12 +23,20 @@ function HomePage() {
           <AnnotateForm form={form} onFormChange={setForm} />
         </CardContent>
       </Card>
-      {/* 640px is about what the table needs; below that it wraps instead of scrolling sideways */}
-      <Card sx={{ flex: "1 1 640px", maxWidth: 820, minWidth: 0 }}>
-        <CardContent sx={{ p: 3, overflowX: "auto" }}>
-          <AnnotationGroups provider={form.provider} year={form.year} />
-        </CardContent>
-      </Card>
+      {/* 640px is about what the tables need; below that the column wraps instead of scrolling sideways.
+          The parser card sits right under the saved annotations, in the same column */}
+      <Box sx={{ flex: "1 1 640px", maxWidth: 820, minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>
+        <Card>
+          <CardContent sx={{ p: 3, overflowX: "auto" }}>
+            <AnnotationGroups provider={form.provider} year={form.year} />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent sx={{ p: 3, overflowX: "auto" }}>
+            <ParserGroups provider={form.provider} />
+          </CardContent>
+        </Card>
+      </Box>
     </Box>
   );
 }
